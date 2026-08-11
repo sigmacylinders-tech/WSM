@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Production Departments</title>
+
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .departments {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fill,
+                minmax(220px, 1fr)
+            );
+            gap: 15px;
+        }
+
+        .department-card {
+            display: block;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: 0.2s;
+        }
+
+        .department-card:hover {
+            background: #e9ecef;
+            border-color: #0d6efd;
+            transform: translateY(-2px);
+        }
+
+        .department-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .department-info {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #777;
+        }
+
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .departments {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <div class="header">
+
+        <h1>Production Departments</h1>
+
+        <div class="subtitle">
+            Select a department to view its production entries.
+        </div>
+
+    </div>
+
+
+    {% if departments %}
+
+        <div class="departments">
+
+            {% for department in departments %}
+
+                <a
+                    href="{% url 'production_entry_list' department.pk %}"
+                    class="department-card"
+                >
+
+                    <div class="department-name">
+                        {{ department.name }}
+                    </div>
+
+
+                    <div class="department-info">
+
+                        {% if department.uses_diameter %}
+                            Uses Coil
+                        {% else %}
+
+                            {% if department.uses_size %}
+                                Uses Size
+                            {% endif %}
+
+                            {% if department.uses_thickness %}
+                                • Uses Thickness
+                            {% endif %}
+
+                        {% endif %}
+
+
+                        <br>
+
+
+                        {% if department.calculation_type == "KG" %}
+                            Calculation: Steel Used (KG)
+                        {% else %}
+                            Calculation: Units Produced
+                        {% endif %}
+
+                    </div>
+
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+
+    {% else %}
+
+        <div class="empty">
+
+            <p>
+                No departments have been created yet.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+</div>
+
+</body>
+
+</html>

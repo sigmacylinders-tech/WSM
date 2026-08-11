@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ title }}</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+            margin: 0;
+            background: #f4f6f9;
+            color: #1f2937;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+
+        .page-container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 32px 24px 50px;
+        }
+
+
+        /* =========================
+           Page Header
+        ========================= */
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+
+        .page-header h1 {
+            margin: 0;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            letter-spacing: -0.4px;
+
+            color: #111827;
+        }
+
+
+        .page-header p {
+            margin: 6px 0 0;
+
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Form Card
+        ========================= */
+
+        .form-card {
+            background: #ffffff;
+
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+
+            padding: 28px;
+
+            box-shadow:
+                0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+
+        /* =========================
+           Django Form
+        ========================= */
+
+        .form-card p {
+            margin: 0 0 20px;
+        }
+
+
+        .form-card p:last-child {
+            margin-bottom: 0;
+        }
+
+
+        .form-card label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            color: #374151;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .form-card input,
+        .form-card select,
+        .form-card textarea {
+            width: 100%;
+
+            min-height: 42px;
+
+            padding: 9px 12px;
+
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+
+            background: #ffffff;
+            color: #111827;
+
+            font-family: inherit;
+            font-size: 14px;
+
+            outline: none;
+
+            transition:
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+
+        .form-card textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+
+        .form-card input:focus,
+        .form-card select:focus,
+        .form-card textarea:focus {
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+
+        /* =========================
+           Help Text
+        ========================= */
+
+        .form-card .helptext {
+            display: block;
+
+            margin-top: 6px;
+
+            color: #6b7280;
+
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+
+        /* =========================
+           Validation Errors
+        ========================= */
+
+        .form-card .errorlist {
+            margin: 0 0 7px;
+            padding: 0;
+
+            list-style: none;
+
+            color: #dc2626;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           Section Divider
+        ========================= */
+
+        .section-divider {
+            margin: 28px 0 18px;
+            padding-top: 24px;
+
+            border-top: 1px solid #e5e7eb;
+        }
+
+
+        .section-divider h2 {
+            margin: 0 0 4px;
+
+            font-size: 16px;
+            font-weight: 700;
+
+            color: #111827;
+        }
+
+
+        .section-divider p {
+            margin: 0;
+
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           Unit Lines (Formset)
+        ========================= */
+
+        #unit-lines {
+            display: flex;
+            flex-direction: column;
+
+            gap: 10px;
+
+            margin-bottom: 14px;
+        }
+
+
+        .unit-line {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 100px 36px;
+
+            gap: 10px;
+            align-items: start;
+
+            padding: 12px;
+
+            background: #f9fafb;
+
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+
+        .unit-line p {
+            margin: 0 !important;
+        }
+
+
+        .unit-line label {
+            font-size: 11px;
+            margin-bottom: 5px;
+
+            color: #6b7280;
+
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+
+        .unit-line input,
+        .unit-line select {
+            min-height: 40px;
+        }
+
+
+        .unit-line .delete-cell {
+            display: flex;
+            align-items: flex-end;
+
+            height: 100%;
+
+            padding-bottom: 1px;
+        }
+
+
+        .unit-line .delete-cell label {
+            display: none;
+        }
+
+
+        .remove-row-btn {
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            width: 40px;
+            height: 40px;
+
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+
+            background: #fef2f2;
+            color: #dc2626;
+
+            font-size: 16px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: background 0.15s ease;
+        }
+
+
+        .remove-row-btn:hover {
+            background: #fee2e2;
+        }
+
+
+        .unit-line.marked-for-delete {
+            opacity: 0.4;
+        }
+
+
+        .add-row-btn {
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            gap: 6px;
+
+            width: 100%;
+
+            min-height: 42px;
+
+            padding: 0 16px;
+
+            border: 1.5px dashed #93c5fd;
+            border-radius: 8px;
+
+            background: #eff6ff;
+            color: #2563eb;
+
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition:
+                background 0.15s ease,
+                border-color 0.15s ease;
+        }
+
+
+        .add-row-btn:hover {
+            background: #dbeafe;
+            border-color: #60a5fa;
+        }
+
+
+        .formset-errors {
+            margin: 0 0 14px;
+            padding: 10px 12px;
+
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+
+            background: #fef2f2;
+
+            color: #dc2626;
+            font-size: 13px;
+        }
+
+
+        .formset-errors ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+
+        /* =========================
+           Actions
+        ========================= */
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            margin-top: 28px;
+            padding-top: 20px;
+
+            border-top: 1px solid #e5e7eb;
+        }
+
+
+        .save-button,
+        .cancel-button {
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            min-height: 42px;
+
+            padding: 0 18px;
+
+            border-radius: 8px;
+
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+
+            text-decoration: none;
+
+            cursor: pointer;
+
+            transition:
+                background 0.15s ease,
+                border-color 0.15s ease,
+                transform 0.1s ease;
+        }
+
+
+        .save-button {
+            border: 1px solid #2563eb;
+
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+
+        .save-button:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+
+        .cancel-button {
+            border: 1px solid #d1d5db;
+
+            background: #ffffff;
+            color: #374151;
+        }
+
+
+        .cancel-button:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+
+        .save-button:active,
+        .cancel-button:active {
+            transform: translateY(1px);
+        }
+
+
+        /* =========================
+           Mobile
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .page-container {
+                padding: 20px 12px 35px;
+            }
+
+
+            .page-header h1 {
+                font-size: 24px;
+            }
+
+
+            .form-card {
+                padding: 20px 16px;
+            }
+
+
+            .unit-line {
+                grid-template-columns: 1fr;
+            }
+
+
+            .unit-line .delete-cell {
+                justify-content: flex-end;
+            }
+
+
+            .form-actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+
+            .save-button,
+            .cancel-button {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="page-container">
+
+
+    <!-- =========================
+         Page Header
+    ========================== -->
+
+    <div class="page-header">
+
+        <h1>
+            {{ title }}
+        </h1>
+
+        <p>
+            Enter the basket details, then list every SKU, unit type, and quantity inside it.
+        </p>
+
+    </div>
+
+
+    <!-- =========================
+         Form
+    ========================== -->
+
+    <div class="form-card">
+
+        <form method="post" id="waste-form">
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+
+            <!-- =========================
+                 Unit Lines Section
+            ========================== -->
+
+            <div class="section-divider">
+                <h2>Basket Contents</h2>
+                <p>Add one row per SKU + unit type found in this basket.</p>
+            </div>
+
+            {% if formset.non_form_errors %}
+                <div class="formset-errors">
+                    <ul>
+                        {% for error in formset.non_form_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {{ formset.management_form }}
+
+            <div id="unit-lines">
+                {% for line_form in formset %}
+                    <div class="unit-line" data-form-index="{{ forloop.counter0 }}">
+
+                        {% if line_form.non_field_errors %}
+                            <div class="formset-errors" style="grid-column: 1 / -1;">
+                                {{ line_form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div>
+                            {{ line_form.sku.label_tag }}
+                            {{ line_form.sku }}
+                            {{ line_form.sku.errors }}
+                        </div>
+
+                        <div>
+                            {{ line_form.units.label_tag }}
+                            {{ line_form.units }}
+                            {{ line_form.units.errors }}
+                        </div>
+
+                        <div>
+                            {{ line_form.nb_of_units.label_tag }}
+                            {{ line_form.nb_of_units }}
+                            {{ line_form.nb_of_units.errors }}
+                        </div>
+
+                        <div class="delete-cell">
+                            {% if line_form.instance.pk %}
+                                <label class="visually-hidden">Remove</label>
+                                {{ line_form.DELETE }}
+                            {% else %}
+                                <button
+                                    type="button"
+                                    class="remove-row-btn"
+                                    onclick="removeUnitRow(this)"
+                                    title="Remove this row"
+                                >
+                                    &times;
+                                </button>
+                            {% endif %}
+
+                            {% for hidden in line_form.hidden_fields %}
+                                {% if hidden.name != 'DELETE' %}
+                                    {{ hidden }}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+
+            <button
+                type="button"
+                class="add-row-btn"
+                id="add-unit-row"
+            >
+                + Add unit type
+            </button>
+
+
+            <div class="form-actions">
+
+
+                  <a  href="{% url 'actual_waste_list' %}"
+                    class="cancel-button"
+                >
+                    Cancel
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="save-button"
+                >
+                    Save
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+</div>
+
+
+<!-- Hidden template used to clone new formset rows -->
+<template id="empty-form-template">
+    <div class="unit-line" data-form-index="__prefix__">
+
+        <div>
+            {{ formset.empty_form.sku.label_tag }}
+            {{ formset.empty_form.sku }}
+        </div>
+
+        <div>
+            {{ formset.empty_form.units.label_tag }}
+            {{ formset.empty_form.units }}
+        </div>
+
+        <div>
+            {{ formset.empty_form.nb_of_units.label_tag }}
+            {{ formset.empty_form.nb_of_units }}
+        </div>
+
+        <div class="delete-cell">
+            <button
+                type="button"
+                class="remove-row-btn"
+                onclick="removeUnitRow(this)"
+                title="Remove this row"
+            >
+                &times;
+            </button>
+        </div>
+
+    </div>
+</template>
+
+
+<script>
+
+    (function () {
+
+    const prefix = "{{ formset.prefix }}";
+    const totalFormsInput = document.querySelector(
+        `#id_${prefix}-TOTAL_FORMS`
+    );
+    const unitLines = document.getElementById("unit-lines");
+    const emptyTemplate = document
+        .getElementById("empty-form-template")
+        .innerHTML;
+    const addBtn = document.getElementById("add-unit-row");
+
+
+    addBtn.addEventListener("click", function () {
+
+        const newIndex = parseInt(totalFormsInput.value, 10);
+
+        const html = emptyTemplate.replace(
+            /__prefix__/g,
+            newIndex
+        );
+
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html.trim();
+
+        unitLines.appendChild(wrapper.firstElementChild);
+
+        totalFormsInput.value = newIndex + 1;
+
+    });
+
+
+    // Renumbers name="..." and id="..." attributes on every row still
+    // in the DOM so they run 0..N-1 with no gaps, matching TOTAL_FORMS.
+    function reindexRows() {
+
+        const rows = unitLines.querySelectorAll(".unit-line");
+
+        rows.forEach(function (row, index) {
+
+            row.dataset.formIndex = index;
+
+            row.querySelectorAll("input, select, textarea, label").forEach(
+                function (el) {
+
+                    ["name", "id", "for"].forEach(function (attr) {
+
+                        const value = el.getAttribute(attr);
+
+                        if (value && value.includes(prefix)) {
+                            el.setAttribute(
+                                attr,
+                                value.replace(
+                                    /-(\d+)-/,
+                                    `-${index}-`
+                                )
+                            );
+                        }
+
+                    });
+
+                }
+            );
+
+        });
+
+        totalFormsInput.value = rows.length;
+
+    }
+
+
+    window.removeUnitRow = function (button) {
+
+        const row = button.closest(".unit-line");
+        const deleteCheckbox = row.querySelector(
+            'input[name$="-DELETE"]'
+        );
+
+        if (deleteCheckbox) {
+            // Existing (already-saved) row: mark for deletion,
+            // keep it in the DOM so Django processes the delete on save.
+            deleteCheckbox.checked = true;
+            row.classList.add("marked-for-delete");
+            row.style.display = "none";
+        } else {
+            // New (unsaved) row: remove entirely and reindex
+            // everything else so TOTAL_FORMS stays accurate.
+            row.remove();
+            reindexRows();
+        }
+
+    };
+
+})();
+
+</script>
+
+
+</body>
+
+</html>

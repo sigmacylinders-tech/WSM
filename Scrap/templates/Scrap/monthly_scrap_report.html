@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Monthly Scrap Report</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px 0;
+        }
+
+        .header p {
+            margin: 0;
+            color: #666;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-width: 180px;
+        }
+
+        .btn {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #0d6efd;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: right;
+        }
+
+        th {
+            background: #f5f5f5;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        th:first-child,
+        td:first-child {
+            text-align: left;
+        }
+
+        tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .positive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .negative {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        tfoot {
+            font-weight: bold;
+        }
+
+        tfoot td {
+            border-top: 2px solid #333;
+            background: #f5f5f5;
+        }
+
+        .empty {
+            text-align: center !important;
+            color: #666;
+            padding: 30px;
+        }
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group input,
+            .filter-group select,
+            .btn {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- Header -->
+
+    <div class="header">
+
+        <h1>
+            Monthly Scrap Report
+        </h1>
+
+        <p>
+            Compare theoretical, actual, and received scrap
+            for the selected month.
+        </p>
+
+    </div>
+
+
+    <!-- Filters -->
+
+    <form method="get" class="filters">
+
+
+        <div class="filter-group">
+
+            <label for="month">
+                Month
+            </label>
+
+            <input
+                type="month"
+                name="month"
+                id="month"
+                value="{{ selected_month }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="filter-group">
+
+            <label for="department">
+                Department
+            </label>
+
+            <select
+                name="department"
+                id="department"
+            >
+
+                <option value="">
+                    All Departments
+                </option>
+
+                {% for department in departments %}
+
+                    <option
+                        value="{{ department.id }}"
+
+                        {% if department.id|stringformat:"s" == selected_department_id %}
+                            selected
+                        {% endif %}
+                    >
+
+                        {{ department.name }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="btn"
+        >
+            Filter
+        </button>
+
+
+    </form>
+
+
+    <!-- Report -->
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Department
+                    </th>
+
+                    <th>
+                        Theoretical Scrap (KG)
+                    </th>
+
+                    <th>
+                        Actual Scrap (KG)
+                    </th>
+
+                    <th>
+                        Received Scrap (KG)
+                    </th>
+
+                    <th>
+                        Actual − Theoretical (KG)
+                    </th>
+
+                    <th>
+                        Actual − Received (KG)
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for report in department_reports %}
+
+                    <tr>
+
+                        <td>
+                            {{ report.department.name }}
+                        </td>
+
+                        <td>
+                            {{ report.theoretical|floatformat:2 }}
+                        </td>
+
+                        <td>
+                            {{ report.actual|floatformat:2 }}
+                        </td>
+
+                        <td>
+                            {{ report.received|floatformat:2 }}
+                        </td>
+
+                        <td>
+
+                            {% if report.actual_vs_theoretical > 0 %}
+
+                                <span class="positive">
+                                    +{{ report.actual_vs_theoretical|floatformat:2 }}
+                                </span>
+
+                            {% elif report.actual_vs_theoretical < 0 %}
+
+                                <span class="negative">
+                                    {{ report.actual_vs_theoretical|floatformat:2 }}
+                                </span>
+
+                            {% else %}
+
+                                0.00
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if report.actual_vs_received > 0 %}
+
+                                <span class="positive">
+                                    +{{ report.actual_vs_received|floatformat:2 }}
+                                </span>
+
+                            {% elif report.actual_vs_received < 0 %}
+
+                                <span class="negative">
+                                    {{ report.actual_vs_received|floatformat:2 }}
+                                </span>
+
+                            {% else %}
+
+                                0.00
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="empty"
+                        >
+                            No scrap data found for this month.
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+
+            {% if department_reports %}
+
+                <tfoot>
+
+                    <tr>
+
+                        <td>
+                            Total
+                        </td>
+
+                        <td>
+                            {{ total_theoretical|floatformat:2 }}
+                        </td>
+
+                        <td>
+                            {{ total_actual|floatformat:2 }}
+                        </td>
+
+                        <td>
+                            {{ total_received|floatformat:2 }}
+                        </td>
+
+                        <td>
+
+                            {% if total_actual_vs_theoretical > 0 %}
+
+                                <span class="positive">
+                                    +{{ total_actual_vs_theoretical|floatformat:2 }}
+                                </span>
+
+                            {% elif total_actual_vs_theoretical < 0 %}
+
+                                <span class="negative">
+                                    {{ total_actual_vs_theoretical|floatformat:2 }}
+                                </span>
+
+                            {% else %}
+
+                                0.00
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if total_actual_vs_received > 0 %}
+
+                                <span class="positive">
+                                    +{{ total_actual_vs_received|floatformat:2 }}
+                                </span>
+
+                            {% elif total_actual_vs_received < 0 %}
+
+                                <span class="negative">
+                                    {{ total_actual_vs_received|floatformat:2 }}
+                                </span>
+
+                            {% else %}
+
+                                0.00
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                </tfoot>
+
+            {% endif %}
+
+        </table>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

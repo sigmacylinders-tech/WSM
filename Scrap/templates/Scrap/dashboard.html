@@ -1,0 +1,637 @@
+<style>
+    :root {
+        --color-primary: #2563eb;
+        --color-primary-dark: #1d4ed8;
+        --color-primary-light: #eff6ff;
+        --color-success: #059669;
+        --color-success-bg: #ecfdf5;
+        --color-danger: #dc2626;
+        --color-danger-bg: #fef2f2;
+        --color-text: #1e293b;
+        --color-text-muted: #64748b;
+        --color-border: #e2e8f0;
+        --color-surface: #ffffff;
+        --color-surface-alt: #f8fafc;
+        --color-header-bg: #0f172a;
+        --radius: 10px;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+        --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
+    }
+
+    .scrap-report-wrapper {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: var(--color-text);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- Filters ---------- */
+
+    .filters {
+        margin-bottom: 24px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-sm);
+        padding: 18px 20px;
+    }
+
+    .filters form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 16px;
+    }
+
+    .filters .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filters label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+        margin-right: 0;
+    }
+
+    .filters select,
+    .filters input {
+        padding: 9px 12px;
+        margin-right: 0;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--color-text);
+        background: var(--color-surface);
+        min-width: 200px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .filters select:hover,
+    .filters input:hover {
+        border-color: #cbd5e1;
+    }
+
+    .filters select:focus,
+    .filters input:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .filters button {
+        padding: 10px 22px;
+        margin-right: 0;
+        border: none;
+        border-radius: 8px;
+        background: var(--color-primary);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.05s ease;
+    }
+
+    .filters button:hover {
+        background: var(--color-primary-dark);
+    }
+
+    .filters button:active {
+        transform: translateY(1px);
+    }
+
+    /* ---------- Table ---------- */
+
+    .table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        background: var(--color-surface);
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 960px;
+        font-size: 13.5px;
+    }
+
+    thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--color-header-bg);
+        color: #f1f5f9;
+        font-weight: 600;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 12px 14px;
+        border: none;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        white-space: nowrap;
+    }
+
+    thead th:last-child {
+        border-right: none;
+    }
+
+    tbody td {
+        padding: 11px 14px;
+        border: none;
+        border-bottom: 1px solid var(--color-border);
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    tbody tr:not(.total-row):hover {
+        background: var(--color-primary-light);
+    }
+
+    tbody tr:not(.total-row) td:first-child {
+        color: var(--color-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Alternating row tint for readability, skipped by total rows via specificity below */
+    tbody tr:not(.total-row):nth-child(even) {
+        background: var(--color-surface-alt);
+    }
+
+    tbody tr:not(.total-row):nth-child(even):hover {
+        background: var(--color-primary-light);
+    }
+
+    /* ---------- Status styles ---------- */
+
+    .missing {
+        color: var(--color-danger);
+        font-weight: 600;
+        background: var(--color-danger-bg);
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        display: inline-block;
+    }
+
+    .variance-positive {
+        color: var(--color-success);
+        font-weight: 700;
+        background: var(--color-success-bg);
+        padding: 3px 9px;
+        border-radius: 6px;
+    }
+
+    .variance-negative {
+        color: var(--color-danger);
+        font-weight: 700;
+        background: var(--color-danger-bg);
+        padding: 3px 9px;
+        border-radius: 6px;
+    }
+
+    /* ---------- Totals ---------- */
+
+    .total-row td {
+        background: #f1f5f9;
+        font-weight: 700;
+        border-top: 2px solid #cbd5e1;
+        border-bottom: 2px solid #cbd5e1;
+        color: var(--color-text);
+    }
+
+    .total-row:hover td {
+        background: #f1f5f9;
+    }
+
+    .total-row td[colspan] {
+        text-align: right;
+        padding-right: 20px;
+        color: var(--color-text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11.5px;
+        letter-spacing: 0.04em;
+    }
+
+    /* Distinguish variance total row slightly */
+    .total-row:has(.variance-positive) td,
+    .total-row:has(.variance-negative) td {
+        border-bottom: 2px solid #94a3b8;
+    }
+
+    /* Empty state */
+    tbody tr td[colspan="11"] {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--color-text-muted);
+        font-size: 14px;
+        font-style: italic;
+        white-space: normal;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 720px) {
+        .filters form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filters select,
+        .filters input {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .filters button {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="scrap-report-wrapper">
+
+<!-- Filters -->
+
+<div class="filters">
+
+<form method="get">
+
+    <!-- Department -->
+    <div class="field-group">
+        <label for="department">
+            Department
+        </label>
+
+        <select name="department" id="department">
+
+            <option value="">
+                All Departments
+            </option>
+
+            {% for department in departments %}
+                <option
+                    value="{{ department.id }}"
+                    {% if department.id|stringformat:"s" == selected_department_id %}
+                        selected
+                    {% endif %}
+                >
+                    {{ department.name }}
+                </option>
+            {% endfor %}
+
+        </select>
+    </div>
+
+
+    <!-- Date -->
+    <div class="field-group">
+        <label for="date">
+            Date
+        </label>
+
+        <input
+            type="date"
+            name="date"
+            id="date"
+            value="{{ selected_date }}"
+        >
+    </div>
+
+
+    <button type="submit">
+        Filter
+    </button>
+
+</form>
+
+
+</div>
+
+<!-- Report -->
+
+<div class="table-scroll">
+<table>
+
+<thead>
+    <tr>
+        <th>Date</th>
+        <th>Department</th>
+        <th>Coil</th>
+        <th>SKU</th>
+        <th>Thickness</th>
+        <th>Diameter</th>
+        <th>Production Basis</th>
+        <th>Standard</th>
+        <th>Theoretical Scrap</th>
+        <th>Actual Scrap</th>
+        <th>Variance</th>
+    </tr>
+</thead>
+
+
+<tbody>
+
+    {% for department_report in department_reports %}
+
+        <!-- Department entries -->
+
+        {% for row in department_report.rows %}
+
+            <tr>
+
+                <!-- Date -->
+                <td>
+                    {{ row.entry.production_date }}
+                </td>
+
+
+                <!-- Department -->
+                <td>
+                    {{ row.entry.department }}
+                </td>
+
+
+                <!-- Coil -->
+                <td>
+                    {% if row.entry.coil %}
+                        {{ row.entry.coil.coil_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+
+                <!-- Size -->
+                <td>
+                    {% if row.entry.size is not None %}
+                        {{ row.entry.size.name}}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+
+                <!-- Thickness -->
+                <td>
+
+                    {% if row.entry.department.uses_diameter and row.entry.coil %}
+
+                        {{ row.entry.coil.thickness|floatformat:2 }}
+
+                    {% elif row.entry.thickness is not None %}
+
+                        {{ row.entry.thickness|floatformat:2 }}
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </td>
+
+
+                <!-- Diameter -->
+                <td>
+
+                    {% if row.entry.department.uses_diameter and row.entry.coil %}
+
+                        {{ row.entry.coil.diameter|floatformat:2 }}
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </td>
+
+
+                <!-- Production Basis -->
+                <td>
+
+                    {% if row.entry.department.calculation_type == "KG" %}
+
+                        {% if row.entry.steel_used_kg is not None %}
+
+                            {{ row.entry.steel_used_kg|floatformat:2 }} kg
+
+                        {% else %}
+
+                            -
+
+                        {% endif %}
+
+
+                    {% elif row.entry.department.calculation_type == "UNITS" %}
+
+                        {% if row.entry.units_produced is not None %}
+
+                            {{ row.entry.units_produced }} units
+
+                        {% else %}
+
+                            -
+
+                        {% endif %}
+
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </td>
+
+
+                <!-- Standard -->
+                <td>
+
+                    {% if row.standard %}
+
+                        {{ row.standard.scrap_percentage|floatformat:2 }}%
+
+                    {% else %}
+
+                        <span class="missing">
+                            Missing
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+
+                <!-- Theoretical Scrap -->
+                <td>
+
+                    {% if row.theoretical is not None %}
+
+                        {{ row.theoretical|floatformat:2 }} kg
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </td>
+
+
+                <!-- Actual Scrap -->
+                <td>
+
+                    {% if row.entry.department.uses_diameter %}
+
+                        {{ row.actual|floatformat:2 }} kg
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </td>
+
+
+                <!-- Variance -->
+                <td>
+
+                    {% if row.entry.department.uses_diameter %}
+
+                        {% if row.variance is not None %}
+
+                            {% if row.variance > 0 %}
+
+                                <span class="variance-positive">
+                                    +{{ row.variance|floatformat:2 }} kg
+                                </span>
+
+                            {% elif row.variance < 0 %}
+
+                                <span class="variance-negative">
+                                    {{ row.variance|floatformat:2 }} kg
+                                </span>
+
+                            {% else %}
+
+                                {{ row.variance|floatformat:2 }} kg
+
+                            {% endif %}
+
+                        {% else %}
+
+                            -
+
+                        {% endif %}
+
+                    {% else %}
+
+                        -
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+
+        <!-- Department Theoretical Total -->
+
+        <tr class="total-row">
+
+            <td colspan="10">
+                Theoretical Total -
+                {{ department_report.department.name }}
+            </td>
+
+            <td>
+                {{ department_report.theoretical_total|floatformat:2 }} kg
+            </td>
+
+        </tr>
+
+
+        <!-- Department Actual Total -->
+
+        <tr class="total-row">
+
+            <td colspan="10">
+                Actual Scrap Total -
+                {{ department_report.department.name }}
+            </td>
+
+            <td>
+                {{ department_report.actual_total|floatformat:2 }} kg
+            </td>
+
+        </tr>
+
+
+        <!-- Department Variance -->
+
+        <tr class="total-row">
+
+            <td colspan="10">
+                Variance -
+                {{ department_report.department.name }}
+            </td>
+
+            <td>
+
+                {% if department_report.variance > 0 %}
+
+                    <span class="variance-positive">
+                        +{{ department_report.variance|floatformat:2 }} kg
+                    </span>
+
+                {% elif department_report.variance < 0 %}
+
+                    <span class="variance-negative">
+                        {{ department_report.variance|floatformat:2 }} kg
+                    </span>
+
+                {% else %}
+
+                    {{ department_report.variance|floatformat:2 }} kg
+
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+
+    {% empty %}
+
+        <tr>
+
+            <td colspan="11">
+                No production entries found for the selected filters.
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+</tbody>
+
+
+</table>
+</div>
+
+</div>

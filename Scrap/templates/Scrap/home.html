@@ -1,0 +1,579 @@
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Manufacturing Management</title>
+
+
+<style>
+
+    * {
+        box-sizing: border-box;
+    }
+
+
+    body {
+        margin: 0;
+        padding: 30px;
+
+        background: #f4f6f9;
+
+        color: #1f2937;
+
+        font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            Arial,
+            sans-serif;
+    }
+
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+
+    /* =========================
+       Header
+    ========================= */
+
+    .header {
+        background: #ffffff;
+
+        padding: 30px;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+
+        box-shadow:
+            0 2px 8px rgba(15, 23, 42, 0.04);
+
+        margin-bottom: 28px;
+    }
+
+
+    .header h1 {
+        margin: 0 0 8px;
+
+        font-size: 30px;
+        font-weight: 700;
+
+        letter-spacing: -0.5px;
+
+        color: #111827;
+    }
+
+
+    .header p {
+        margin: 0;
+
+        color: #6b7280;
+
+        font-size: 15px;
+        line-height: 1.5;
+    }
+
+
+    /* =========================
+       Section
+    ========================= */
+
+    .section {
+        margin-bottom: 30px;
+    }
+
+
+    .section-header {
+        display: flex;
+        align-items: center;
+
+        gap: 10px;
+
+        margin-bottom: 14px;
+    }
+
+
+    .section-header h2 {
+        margin: 0;
+
+        font-size: 17px;
+        font-weight: 650;
+
+        color: #374151;
+    }
+
+
+    .section-line {
+        flex: 1;
+
+        height: 1px;
+
+        background: #e5e7eb;
+    }
+
+
+    /* =========================
+       Navigation Grid
+    ========================= */
+
+    .navigation {
+        display: grid;
+
+        grid-template-columns:
+            repeat(auto-fit, minmax(250px, 1fr));
+
+        gap: 18px;
+    }
+
+
+    /* =========================
+       Cards
+    ========================= */
+
+    .card {
+        display: block;
+
+        position: relative;
+
+        background: #ffffff;
+
+        padding: 24px;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+
+        text-decoration: none;
+
+        color: #1f2937;
+
+        box-shadow:
+            0 2px 8px rgba(15, 23, 42, 0.04);
+
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            border-color 0.18s ease;
+    }
+
+
+    .card:hover {
+        transform: translateY(-3px);
+
+        border-color: #bfdbfe;
+
+        box-shadow:
+            0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+
+    .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 48px;
+        height: 48px;
+
+        margin-bottom: 16px;
+
+        border-radius: 10px;
+
+        background: #eff6ff;
+
+        font-size: 25px;
+    }
+
+
+    .card h2 {
+        margin: 0 0 8px;
+
+        font-size: 18px;
+        font-weight: 650;
+
+        color: #111827;
+    }
+
+
+    .card p {
+        margin: 0;
+
+        color: #6b7280;
+
+        line-height: 1.5;
+
+        font-size: 13px;
+    }
+
+
+    /* =========================
+       Scrap Cards
+    ========================= */
+
+    .scrap-section .icon {
+        background: #ecfdf5;
+    }
+
+
+    .scrap-section .card:hover {
+        border-color: #a7f3d0;
+    }
+
+
+    /* =========================
+       Waste Cards
+    ========================= */
+
+    .waste-section .icon {
+        background: #fff7ed;
+    }
+
+
+    .waste-section .card:hover {
+        border-color: #fed7aa;
+    }
+
+
+    /* =========================
+       Mobile
+    ========================= */
+
+    @media (max-width: 600px) {
+
+        body {
+            padding: 15px;
+        }
+
+
+        .header {
+            padding: 22px;
+        }
+
+
+        .header h1 {
+            font-size: 25px;
+        }
+
+
+        .navigation {
+            grid-template-columns: 1fr;
+        }
+
+
+        .card {
+            padding: 20px;
+        }
+
+    }
+
+</style>
+
+<div class="container">
+
+
+    <!-- =========================
+         Header
+    ========================== -->
+
+    <div class="header">
+
+        <h1>
+            Scrap and Waste Management
+        </h1>
+
+        <p>
+            Manage production, coils, scrap, waste,
+            and reports.
+        </p>
+
+    </div>
+
+
+    <!-- =========================
+         Production
+    ========================== -->
+
+    <div class="section">
+
+        <div class="section-header">
+
+            <h2>
+                Production
+            </h2>
+
+            <div class="section-line"></div>
+
+        </div>
+
+
+        <div class="navigation">
+
+
+            <!-- Production -->
+
+            <a
+                href="{% url 'production_department_list' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    🏭
+                </div>
+
+                <h2>
+                    Production
+                </h2>
+
+                <p>
+                    View and manage production entries
+                    by department and date.
+                </p>
+
+            </a>
+
+
+            <!-- Coils -->
+
+            <a
+                href="{% url 'coil_list' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    🔩
+                </div>
+
+                <h2>
+                    Coils
+                </h2>
+
+                <p>
+                    View, create, and edit coils
+                    used in production.
+                </p>
+
+            </a>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         Scrap
+    ========================== -->
+
+    <div class="section scrap-section">
+
+        <div class="section-header">
+
+            <h2>
+                Scrap
+            </h2>
+
+            <div class="section-line"></div>
+
+        </div>
+
+
+        <div class="navigation">
+
+
+            <!-- Actual Scrap -->
+
+            <a
+                href="{% url 'actual_scrap_list' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    ♻️
+                </div>
+
+                <h2>
+                    Actual Scrap
+                </h2>
+
+                <p>
+                    Record and manage actual scrap
+                    by department and date.
+                </p>
+
+            </a>
+
+
+            <!-- Received Scrap -->
+
+            <a
+                href="{% url 'received_scrap_list' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    📦
+                </div>
+
+                <h2>
+                    Received Scrap
+                </h2>
+
+                <p>
+                    Record and manage received scrap
+                    by department and date.
+                </p>
+
+            </a>
+
+
+            <!-- Scrap Report -->
+
+            <a
+                href="{% url 'index' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    📊
+                </div>
+
+                <h2>
+                    Scrap Report
+                </h2>
+
+                <p>
+                    View scrap reports and analyze
+                    production scrap data.
+                </p>
+
+            </a>
+
+
+            <!-- Monthly Scrap Report -->
+
+            <a
+                href="{% url 'monthly_scrap_report' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    📅
+                </div>
+
+                <h2>
+                    Monthly Scrap Report
+                </h2>
+
+                <p>
+                    Compare theoretical, actual, and
+                    received scrap for a selected month.
+                </p>
+
+            </a>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         Waste
+    ========================== -->
+
+    <div class="section waste-section">
+
+        <div class="section-header">
+
+            <h2>
+                Waste
+            </h2>
+
+            <div class="section-line"></div>
+
+        </div>
+
+
+        <div class="navigation">
+
+
+            <!-- Actual Waste -->
+
+            <a
+                href="{% url 'actual_waste_list' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    ♻️
+                </div>
+
+                <h2>
+                    Actual Waste
+                </h2>
+
+                <p>
+                    Record and manage actual waste
+                    by department and date.
+                </p>
+
+            </a>
+
+
+            <!-- Received Waste -->
+
+            <a
+                href="{% url 'received_waste_list' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    📦
+                </div>
+
+                <h2>
+                    Received Waste
+                </h2>
+
+                <p>
+                    Record and manage waste received
+                    by department and date.
+                </p>
+
+            </a>
+
+
+            <!-- Waste Report -->
+
+            <a
+                href="{% url 'waste_report' %}"
+                class="card"
+            >
+
+                <div class="icon">
+                    📊
+                </div>
+
+                <h2>
+                    Waste Report
+                </h2>
+
+                <p>
+                    Compare received and actual waste
+                    for a selected month.
+                </p>
+
+            </a>
+
+
+        </div>
+
+    </div>
+
+
+</div>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ department.name }} - Production</title>
+
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* Header */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-top: 6px;
+        }
+
+
+        /* Navigation */
+
+        .navigation {
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #0d6efd;
+        }
+
+        .btn-primary:hover {
+            background: #0b5ed7;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5c636a;
+        }
+
+
+        /* Date filter */
+
+        .filter {
+            display: flex;
+            align-items: end;
+            gap: 10px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .filter-group input {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+
+        /* Table */
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+
+        /* Empty */
+
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #777;
+        }
+
+
+        /* Responsive */
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter .btn {
+                width: 100%;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- Header -->
+
+    <div class="header">
+
+        <div>
+
+            <h1>
+                {{ department.name }}
+            </h1>
+
+            <div class="subtitle">
+                Production Entries
+            </div>
+
+        </div>
+
+
+        <a
+            href="{% url 'production_department_list' %}"
+            class="btn btn-secondary"
+        >
+            ← Departments
+        </a>
+
+    </div>
+
+
+    <!-- Date Filter -->
+
+    <form
+        method="get"
+        class="filter"
+    >
+
+        <div class="filter-group">
+
+            <label for="date">
+                Production Date
+            </label>
+
+            <input
+                type="date"
+                name="date"
+                id="date"
+                value="{{ selected_date|date:'Y-m-d' }}"
+            >
+
+        </div>
+
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+        >
+            Filter
+        </button>
+
+    </form>
+
+
+    <!-- Add Production Entry -->
+
+    <div style="margin-bottom: 20px;">
+
+        <a
+            href="{% url 'production_entry_create' department.pk %}"
+            class="btn btn-primary"
+        >
+            + Add Production Entry
+        </a>
+
+    </div>
+
+
+    {% if production_entries %}
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    {% if department.uses_diameter %}
+
+                        <th>Coil</th>
+                        <th>Thickness</th>
+                        <th>Diameter</th>
+                        <th>Steel Used (KG)</th>
+
+                    {% else %}
+
+                        {% if department.uses_size %}
+                            <th>SKU</th>
+                        {% endif %}
+
+
+                        {% if department.uses_thickness %}
+                            <th>Thickness</th>
+                        {% endif %}
+
+
+                        {% if department.calculation_type == "KG" %}
+
+                            <th>Steel Used (KG)</th>
+
+                        {% else %}
+
+                            <th>Units Produced</th>
+
+                        {% endif %}
+
+                    {% endif %}
+
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for entry in production_entries %}
+
+                    <tr>
+
+
+                        {% if department.uses_diameter %}
+
+                            <td>
+
+                                {% if entry.coil %}
+                                    {{ entry.coil.coil_number }}
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if entry.coil %}
+                                    {{ entry.coil.thickness }}
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if entry.coil %}
+                                    {{ entry.coil.diameter }}
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if entry.steel_used_kg %}
+                                    {{ entry.steel_used_kg }}
+                                {% else %}
+                                    -
+                                {% endif %}
+
+                            </td>
+
+
+                        {% else %}
+
+
+                            {% if department.uses_size %}
+
+                                <td>
+                                    {{ entry.size|default:"-" }}
+                                </td>
+
+                            {% endif %}
+
+
+                            {% if department.uses_thickness %}
+
+                                <td>
+                                    {{ entry.thickness|default:"-" }}
+                                </td>
+
+                            {% endif %}
+
+
+                            {% if department.calculation_type == "KG" %}
+
+                                <td>
+                                    {{ entry.steel_used_kg|default:"-" }}
+                                </td>
+
+                            {% else %}
+
+                                <td>
+                                    {{ entry.units_produced|default:"-" }}
+                                </td>
+
+                            {% endif %}
+
+
+                        {% endif %}
+
+
+                        <td>
+
+                            <a
+                                href="{% url 'production_entry_edit' entry.pk %}"
+                                class="btn btn-secondary"
+                            >
+                                Edit
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+    {% else %}
+
+        <div class="empty">
+
+            <p>
+                No production entries found for
+                <strong>
+                    {{ selected_date|date:"d/m/Y" }}
+                </strong>.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+
+</div>
+
+</body>
+
+</html>
+

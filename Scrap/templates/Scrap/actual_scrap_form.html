@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ title }}</title>
+
+
+    <!-- Select2 CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+        rel="stylesheet"
+    >
+
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 15px;
+            background: white;
+        }
+
+        /*
+         * Select2 styling
+         */
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container .select2-selection--single {
+            height: 42px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .select2-container .select2-selection--single
+        .select2-selection__rendered {
+            line-height: 40px;
+            padding-left: 10px;
+        }
+
+        .select2-container .select2-selection--single
+        .select2-selection__arrow {
+            height: 40px;
+        }
+
+        .errorlist {
+            color: #dc3545;
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button,
+        .cancel {
+            padding: 10px 18px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 15px;
+        }
+
+        button {
+            background: #0d6efd;
+            color: white;
+        }
+
+        button:hover {
+            background: #0b5ed7;
+        }
+
+        .cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel:hover {
+            background: #5c636a;
+        }
+
+        /*
+         * Coil is hidden by default.
+         */
+
+        #coil-group {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            button,
+            .cancel {
+                text-align: center;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+    <h1>{{ title }}</h1>
+
+
+    <form method="post">
+
+        {% csrf_token %}
+
+
+        {{ form.non_field_errors }}
+
+
+        <!-- Department -->
+
+        <div class="form-group">
+
+            <label for="id_department">
+                Department
+            </label>
+
+
+            <select
+                name="department"
+                id="id_department"
+                class="form-control"
+            >
+
+                {% for department in form.department.field.queryset %}
+
+                    <option
+                        value="{{ department.pk }}"
+                        data-uses-diameter="{{ department.uses_diameter|yesno:'true,false' }}"
+
+                        {% if form.department.value|stringformat:"s" == department.pk|stringformat:"s" %}
+                            selected
+                        {% endif %}
+                    >
+
+                        {{ department.name }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            {{ form.department.errors }}
+
+        </div>
+
+
+        <!-- Coil -->
+
+        <div
+            class="form-group"
+            id="coil-group"
+        >
+
+            <label for="{{ form.coil.id_for_label }}">
+                Coil
+            </label>
+
+            {{ form.coil }}
+
+            {{ form.coil.errors }}
+
+        </div>
+
+
+        <!-- Actual Scrap -->
+
+        <div class="form-group">
+
+            <label for="{{ form.actual_scrap_kg.id_for_label }}">
+                Actual Scrap (KG)
+            </label>
+
+            {{ form.actual_scrap_kg }}
+
+            {{ form.actual_scrap_kg.errors }}
+
+        </div>
+
+
+        <!-- Date -->
+
+        <div class="form-group">
+
+            <label for="{{ form.entered_at.id_for_label }}">
+                Date
+            </label>
+
+            {{ form.entered_at }}
+
+            {{ form.entered_at.errors }}
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button type="submit">
+
+                {% if actual_scrap %}
+                    Update Actual Scrap
+                {% else %}
+                    Create Actual Scrap
+                {% endif %}
+
+            </button>
+
+
+            <a
+                href="{% url 'actual_scrap_list' %}"
+                class="cancel"
+            >
+                Back to Actual Scrap
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<!-- jQuery -->
+
+<script
+    src="https://code.jquery.com/jquery-3.7.1.min.js">
+</script>
+
+
+<!-- Select2 -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
+</script>
+
+
+<script>
+
+    $(document).ready(function () {
+
+        const departmentSelect = $("#id_department");
+
+        const coilSelect = $("#id_coil");
+
+        const coilGroup = $("#coil-group");
+
+
+        /*
+         * Make the Coil field searchable.
+         *
+         * The user can type something such as:
+         *
+         * 123
+         *
+         * and Select2 will filter the available coils.
+         */
+
+        coilSelect.select2({
+            placeholder: "Search for a coil...",
+            allowClear: true,
+            width: "100%"
+        });
+
+
+        /*
+         * Show or hide Coil depending on
+         * whether the selected department
+         * uses diameter.
+         */
+
+        function updateCoilVisibility() {
+
+            const selectedOption =
+                departmentSelect.find("option:selected");
+
+
+            const usesDiameter =
+                selectedOption.attr("data-uses-diameter");
+
+
+            if (usesDiameter === "true") {
+
+                coilGroup.show();
+
+            } else {
+
+                coilGroup.hide();
+
+
+                /*
+                 * Clear the coil when switching
+                 * to a department that does not
+                 * use diameter.
+                 */
+
+                coilSelect
+                    .val(null)
+                    .trigger("change");
+
+            }
+
+        }
+
+
+        /*
+         * When department changes.
+         */
+
+        departmentSelect.on(
+            "change",
+            updateCoilVisibility
+        );
+
+
+        /*
+         * Run once when the page loads.
+         *
+         * This is important for Edit mode,
+         * because the department is already selected.
+         */
+
+        updateCoilVisibility();
+
+    });
+
+</script>
+
+
+</body>
+
+</html>

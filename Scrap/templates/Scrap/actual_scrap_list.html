@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Actual Scrap</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .date {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 9px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #0d6efd;
+        }
+
+        .btn-primary:hover {
+            background: #0b5ed7;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5c636a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #f8f9fa;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #777;
+        }
+
+        .total {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+            .btn {
+                font-size: 13px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <h1>Actual Scrap</h1>
+
+        <a
+            href="{% url 'actual_scrap_create' %}"
+            class="btn btn-primary"
+        >
+            + Add Actual Scrap
+        </a>
+
+    </div>
+
+
+    <div class="date">
+
+        Today's entries:
+        <strong>{{ today|date:"d/m/Y" }}</strong>
+
+    </div>
+
+
+    {% if actual_scraps %}
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>Department</th>
+
+                    <th>Coil</th>
+
+                    <th>Actual Scrap (KG)</th>
+
+                    <th>Date</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for scrap in actual_scraps %}
+
+                    <tr>
+
+                        <td>
+                            {{ scrap.department }}
+                        </td>
+
+                        <td>
+
+                            {% if scrap.coil %}
+                                {{ scrap.coil.coil_number }}
+                            {% else %}
+                                -
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if scrap.actual_scrap_kg %}
+                                {{ scrap.actual_scrap_kg }} kg
+                            {% else %}
+                                -
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            {{ scrap.entered_at|date:"d/m/Y" }}
+                        </td>
+
+                        <td>
+
+                            <a
+                                href="{% url 'actual_scrap_edit' scrap.pk %}"
+                                class="btn btn-secondary"
+                            >
+                                Edit
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        <div class="total">
+
+            Total Actual Scrap:
+            {{ actual_scraps|length }} entries
+
+        </div>
+
+
+    {% else %}
+
+        <div class="empty">
+
+            <p>
+                No actual scrap has been entered for today.
+            </p>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+</html>
+

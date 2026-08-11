@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Received Scrap</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .filters label {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .filters input {
+            padding: 7px;
+        }
+
+        button,
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            background-color: #198754;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background-color: #0d6efd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .total {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+
+    <h1>
+        Received Scrap
+    </h1>
+
+    <a
+        href="{% url 'received_scrap_create' %}"
+        class="btn"
+    >
+        + Add Received Scrap
+    </a>
+
+</div>
+
+
+<!-- Date filter -->
+
+<form method="get" class="filters">
+
+    <label for="date">
+        Date:
+    </label>
+
+    <input
+        type="date"
+        name="date"
+        id="date"
+        value="{{ selected_date }}"
+        required
+    >
+
+    <button type="submit">
+        Filter
+    </button>
+
+</form>
+
+
+<h2>
+    Received Scrap for {{ selected_date }}
+</h2>
+
+
+<table>
+
+    <thead>
+        <tr>
+            <th>Department</th>
+            <th>Received Scrap (KG)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for scrap in received_scraps %}
+
+            <tr>
+
+                <td>
+                    {{ scrap.department.name }}
+                </td>
+
+                <td>
+                    {{ scrap.received_scrap_kg }}
+                </td>
+
+                <td>
+
+                    <a
+                        href="{% url 'received_scrap_edit' scrap.pk %}"
+                        class="btn btn-edit"
+                    >
+                        Edit
+                    </a>
+
+                </td>
+
+            </tr>
+
+        {% empty %}
+
+            <tr>
+                <td colspan="3">
+                    No received scrap recorded for this date.
+                </td>
+            </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+
+{% if received_scraps %}
+
+    <div class="total">
+
+        Total Received Scrap:
+        {{ received_scraps|length }}
+
+        record{{ received_scraps|length|pluralize }}
+
+    </div>
+
+{% endif %}
+
+</body>
+</html>

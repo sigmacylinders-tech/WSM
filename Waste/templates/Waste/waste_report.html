@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Waste Report</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f4f6f9;
+            color: #1f2937;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        .page-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 32px 24px 50px;
+        }
+
+        /* =========================
+           Header
+        ========================= */
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: -0.4px;
+        }
+
+        .page-header p {
+            margin: 6px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* =========================
+           Filter Card
+        ========================= */
+
+        .filter-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+        .filter-title {
+            margin: 0 0 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .filter-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            min-width: 220px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            height: 42px;
+            padding: 0 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #111827;
+            font-size: 14px;
+            outline: none;
+            transition:
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .filter-button {
+            height: 42px;
+            padding: 0 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition:
+                background 0.15s ease,
+                transform 0.1s ease;
+        }
+
+        .filter-button:hover {
+            background: #1d4ed8;
+        }
+
+        .filter-button:active {
+            transform: translateY(1px);
+        }
+
+        /* =========================
+           Report Card
+        ========================= */
+
+        .report-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            margin-bottom: 24px;
+        }
+
+        .report-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .report-header h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 650;
+            color: #111827;
+        }
+
+        .report-header span {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* =========================
+           Table
+        ========================= */
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .report-table thead {
+            background: #f8fafc;
+        }
+
+        .report-table th {
+            padding: 13px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table td {
+            padding: 15px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        .report-table tbody tr {
+            transition: background 0.12s ease;
+        }
+
+        .report-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .report-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* =========================
+           Text / Number Styling
+        ========================= */
+
+        .department-name {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .sku {
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        .unit-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 9px;
+            border-radius: 6px;
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .number {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .kg-value {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        /* =========================
+           Variance
+        ========================= */
+
+        .variance {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .variance-positive {
+            color: #16a34a;
+        }
+
+        .variance-negative {
+            color: red;
+        }
+
+        .variance-zero {
+            color: #6b7280;
+        }
+
+        /* =========================
+           Empty State
+        ========================= */
+
+        .empty-state {
+            padding: 55px 20px !important;
+            text-align: center;
+            color: #6b7280 !important;
+        }
+
+        .empty-icon {
+            width: 46px;
+            height: 46px;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #f3f4f6;
+            color: #9ca3af;
+            font-size: 20px;
+        }
+
+        .empty-title {
+            display: block;
+            margin-bottom: 4px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .empty-description {
+            font-size: 13px;
+        }
+
+        /* =========================
+           Mobile
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            .page-container {
+                padding: 20px 12px 35px;
+            }
+
+            .page-header h1 {
+                font-size: 24px;
+            }
+
+            .filter-card {
+                padding: 16px;
+            }
+
+            .filter-form {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 14px;
+            }
+
+            .filter-group {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .filter-button {
+                width: 100%;
+                margin-top: 2px;
+            }
+
+            .report-header {
+                padding: 16px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="page-container">
+
+
+    <!-- =========================
+         Page Header
+    ========================== -->
+
+    <div class="page-header">
+
+        <h1>
+            Waste Report
+        </h1>
+
+        <p>
+            Compare received waste with recorded actual waste.
+        </p>
+
+    </div>
+
+
+    <!-- =========================
+         Filters
+    ========================== -->
+
+    <div class="filter-card">
+
+        <div class="filter-title">
+            Report Filters
+        </div>
+
+
+        <form
+            method="get"
+            class="filter-form"
+        >
+
+
+            <!-- Month -->
+
+            <div class="filter-group">
+
+                <label for="month">
+                    Month
+                </label>
+
+                <input
+                    type="month"
+                    name="month"
+                    id="month"
+                    value="{{ selected_month }}"
+                >
+
+            </div>
+
+
+            <!-- Department -->
+
+            <div class="filter-group">
+
+                <label for="department">
+                    Department
+                </label>
+
+                <select
+                    name="department"
+                    id="department"
+                >
+
+                    <option value="">
+                        All Departments
+                    </option>
+
+
+                    {% for department in departments %}
+
+                        <option
+                            value="{{ department.id }}"
+                            {% if department.id|stringformat:"s" == selected_department %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ department.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- Filter Button -->
+
+            <button
+                type="submit"
+                class="filter-button"
+            >
+                Apply Filters
+            </button>
+
+
+        </form>
+
+    </div>
+
+
+    <!-- =========================
+         Weight Summary
+    ========================== -->
+
+    <div class="report-card">
+
+
+        <div class="report-header">
+
+            <h2>
+                Weight Summary
+            </h2>
+
+            <span>
+                Total received vs. recorded (kg), by department
+            </span>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table class="report-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Department
+                        </th>
+
+                        <th>
+                            Received KG
+                        </th>
+
+                        <th>
+                            Recorded KG
+                        </th>
+
+                        <th>
+                            Variance KG
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for row in weight_report %}
+
+
+                        <tr>
+
+
+                            <td>
+
+                                <span class="department-name">
+                                    {{ row.department }}
+                                </span>
+
+                            </td>
+
+
+                            <td class="number kg-value">
+                                {{ row.received_kg|floatformat:2 }}
+                            </td>
+
+
+                            <td class="number kg-value">
+                                {{ row.recorded_kg|floatformat:2 }}
+                            </td>
+
+
+                            <td class="number">
+
+
+                                {% if row.variance > 0 %}
+
+                                    <span class="variance variance-positive">
+                                        +{{ row.variance|floatformat:2 }}
+                                    </span>
+
+
+                                {% elif row.variance < 0 %}
+
+                                    <span class="variance variance-negative">
+                                        {{ row.variance|floatformat:2 }}
+                                    </span>
+
+
+                                {% else %}
+
+                                    <span class="variance variance-zero">
+                                        0.00
+                                    </span>
+
+                                {% endif %}
+
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+
+                        <tr>
+
+                            <td
+                                colspan="4"
+                                class="empty-state"
+                            >
+
+                                <div class="empty-icon">
+                                    ∅
+                                </div>
+
+                                <span class="empty-title">
+                                    No waste records found
+                                </span>
+
+                                <span class="empty-description">
+                                    Try changing the month or department filter.
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+<!-- =========================
+         Units Breakdown
+    ========================== -->
+<div class="report-card">
+
+
+        <div class="report-header">
+
+            <h2>
+                Units Breakdown
+            </h2>
+
+            <span>
+                Units received vs. recorded, by department and SKU
+            </span>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table class="report-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Department
+                        </th>
+
+                        <th>
+                            SKU
+                        </th>
+
+                        <th>
+                            Waste Unit
+                        </th>
+
+                        <th>
+                            Received Qty
+                        </th>
+
+                        <th>
+                            Recorded Qty
+                        </th>
+
+                        <th>
+                            Variance
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for row in units_report %}
+
+
+                        <tr>
+
+
+                            <td>
+
+                                <span class="department-name">
+                                    {{ row.department }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="sku">
+                                    {{ row.sku }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="unit-badge">
+                                    {{ row.units }}
+                                </span>
+
+                            </td>
+
+
+                            <td class="number">
+                                {{ row.received_nb_units }}
+                            </td>
+
+
+                            <td class="number">
+                                {{ row.recorded_nb_units }}
+                            </td>
+
+
+                            <td class="number">
+
+
+                                {% if row.variance > 0 %}
+
+                                    <span class="variance variance-positive">
+                                        +{{ row.variance }}
+                                    </span>
+
+
+                                {% elif row.variance < 0 %}
+
+                                    <span class="variance variance-negative">
+                                        {{ row.variance }}
+                                    </span>
+
+
+                                {% else %}
+
+                                    <span class="variance variance-zero">
+                                        0
+                                    </span>
+
+                                {% endif %}
+
+
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+
+                        <tr>
+
+                            <td
+                                colspan="6"
+                                class="empty-state"
+                            >
+
+                                <div class="empty-icon">
+                                    ∅
+                                </div>
+
+                                <span class="empty-title">
+                                    No unit records found
+                                </span>
+
+                                <span class="empty-description">
+                                    Try changing the month or department filter.
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

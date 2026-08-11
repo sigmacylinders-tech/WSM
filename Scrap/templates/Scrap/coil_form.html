@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ title }}</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 15px;
+        }
+
+        .errorlist {
+            color: #dc3545;
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button,
+        .cancel {
+            padding: 10px 18px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 15px;
+        }
+
+        button {
+            background: #0d6efd;
+            color: white;
+        }
+
+        button:hover {
+            background: #0b5ed7;
+        }
+
+        .cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .cancel:hover {
+            background: #5c636a;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>{{ title }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <div class="form-group">
+            <label for="{{ form.coil_number.id_for_label }}">
+                Coil Number
+            </label>
+
+            {{ form.coil_number }}
+
+            {{ form.coil_number.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.thickness.id_for_label }}">
+                Thickness
+            </label>
+
+            {{ form.thickness }}
+
+            {{ form.thickness.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.diameter.id_for_label }}">
+                Diameter
+            </label>
+
+            {{ form.diameter }}
+
+            {{ form.diameter.errors }}
+        </div>
+
+        <div class="buttons">
+
+            <button type="submit">
+                {% if coil %}
+                    Update Coil
+                {% else %}
+                    Create Coil
+                {% endif %}
+            </button>
+
+            <a href="{% url 'coil_list' %}" class="cancel">
+                Cancel
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+</body>
+</html>

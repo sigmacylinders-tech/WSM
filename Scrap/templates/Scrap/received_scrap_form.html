@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>{{ title }}</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+
+        .form-container {
+            max-width: 500px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 9px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #198754;
+            color: white;
+            cursor: pointer;
+        }
+
+        .cancel {
+            margin-left: 10px;
+            text-decoration: none;
+            color: #555;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .field-error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="form-container">
+
+    <h1>
+        {{ title }}
+    </h1>
+
+
+    {% if form.non_field_errors %}
+
+        <div class="error">
+
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    <form method="post">
+
+        {% csrf_token %}
+
+
+        <!-- Department -->
+
+        <div class="form-group">
+
+            <label for="{{ form.department.id_for_label }}">
+                Department
+            </label>
+
+            {{ form.department }}
+
+            {% for error in form.department.errors %}
+                <div class="field-error">
+                    {{ error }}
+                </div>
+            {% endfor %}
+
+        </div>
+
+
+        <!-- Date -->
+
+        <div class="form-group">
+
+            <label for="{{ form.date.id_for_label }}">
+                Date
+            </label>
+
+            {{ form.date }}
+
+            {% for error in form.date.errors %}
+                <div class="field-error">
+                    {{ error }}
+                </div>
+            {% endfor %}
+
+        </div>
+
+
+        <!-- Received Scrap -->
+
+        <div class="form-group">
+
+            <label for="{{ form.received_scrap_kg.id_for_label }}">
+                Received Scrap (KG)
+            </label>
+
+            {{ form.received_scrap_kg }}
+
+            {% for error in form.received_scrap_kg.errors %}
+                <div class="field-error">
+                    {{ error }}
+                </div>
+            {% endfor %}
+
+        </div>
+
+
+        <button type="submit">
+            Save
+        </button>
+
+
+        <a
+            href="{% url 'received_scrap_list' %}"
+            class="cancel"
+        >
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>
