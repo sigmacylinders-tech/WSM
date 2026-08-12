@@ -41,4 +41,5 @@ path(
     views.waste_report,
     name="waste_report",
 ),
+path("ajax/skus-for-department/<int:department_id>/", views.skus_for_department, name="skus_for_department"),
 ]

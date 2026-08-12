@@ -20,7 +20,29 @@ class ActualWasteForm(forms.ModelForm):
         widgets = {"date": forms.DateInput(attrs={"type": "date"})}
 
 
+class ActualWasteUnitForm(forms.ModelForm):
+    class Meta:
+        model = ActualWasteUnit
+        fields = ["sku", "units", "nb_of_units"]
+
+    def __init__(self, *args, department=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if department is not None:
+            self.fields["sku"].queryset = department.skus.order_by("name")
+
+
 class BaseActualWasteUnitFormSet(BaseInlineFormSet):
+
+    def __init__(self, *args, department=None, **kwargs):
+        self.department = department
+        super().__init__(*args, **kwargs)
+
+    def get_form_kwargs(self, index):
+        kwargs = super().get_form_kwargs(index)
+        kwargs["department"] = self.department
+        return kwargs
+
     def clean(self):
         super().clean()
 
@@ -46,6 +68,7 @@ class BaseActualWasteUnitFormSet(BaseInlineFormSet):
 ActualWasteUnitFormSet = inlineformset_factory(
     ActualWaste,
     ActualWasteUnit,
+    form=ActualWasteUnitForm,
     formset=BaseActualWasteUnitFormSet,
     fields=["sku", "units", "nb_of_units"],
     extra=1,
@@ -69,7 +92,29 @@ class ReceivedWasteForm(forms.ModelForm):
     # since operators may receive multiple baskets per department per day.
 
 
+class ReceivedWasteUnitForm(forms.ModelForm):
+    class Meta:
+        model = ReceivedWasteUnit
+        fields = ["sku", "units", "nb_of_units"]
+
+    def __init__(self, *args, department=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if department is not None:
+            self.fields["sku"].queryset = department.skus.order_by("name")
+
+
 class BaseReceivedWasteUnitFormSet(BaseInlineFormSet):
+
+    def __init__(self, *args, department=None, **kwargs):
+        self.department = department
+        super().__init__(*args, **kwargs)
+
+    def get_form_kwargs(self, index):
+        kwargs = super().get_form_kwargs(index)
+        kwargs["department"] = self.department
+        return kwargs
+
     def clean(self):
         super().clean()
 
@@ -95,6 +140,7 @@ class BaseReceivedWasteUnitFormSet(BaseInlineFormSet):
 ReceivedWasteUnitFormSet = inlineformset_factory(
     ReceivedWaste,
     ReceivedWasteUnit,
+    form=ReceivedWasteUnitForm,
     formset=BaseReceivedWasteUnitFormSet,
     fields=["sku", "units", "nb_of_units"],
     extra=1,

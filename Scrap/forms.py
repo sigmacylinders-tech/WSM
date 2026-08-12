@@ -177,6 +177,9 @@ class ProductionEntryForm(forms.ModelForm):
 
                 self.fields["size"].required = True
 
+                # Only show SKUs linked to this department.
+                self.fields["size"].queryset = department.skus.order_by("name")
+
             else:
 
                 self.fields.pop("size")

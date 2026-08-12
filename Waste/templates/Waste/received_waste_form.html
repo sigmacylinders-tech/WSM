@@ -41,10 +41,6 @@
         }
 
 
-        /* =========================
-           Page Header
-        ========================= */
-
         .page-header {
             margin-bottom: 24px;
         }
@@ -70,10 +66,6 @@
         }
 
 
-        /* =========================
-           Form Card
-        ========================= */
-
         .form-card {
             background: #ffffff;
 
@@ -86,10 +78,6 @@
                 0 2px 8px rgba(15, 23, 42, 0.04);
         }
 
-
-        /* =========================
-           Django Form
-        ========================= */
 
         .form-card p {
             margin: 0 0 20px;
@@ -155,10 +143,6 @@
         }
 
 
-        /* =========================
-           Help Text
-        ========================= */
-
         .form-card .helptext {
             display: block;
 
@@ -171,10 +155,6 @@
         }
 
 
-        /* =========================
-           Validation Errors
-        ========================= */
-
         .form-card .errorlist {
             margin: 0 0 7px;
             padding: 0;
@@ -186,10 +166,6 @@
             font-size: 13px;
         }
 
-
-        /* =========================
-           Section Divider
-        ========================= */
 
         .section-divider {
             margin: 28px 0 18px;
@@ -216,10 +192,6 @@
             font-size: 13px;
         }
 
-
-        /* =========================
-           Unit Lines (Formset)
-        ========================= */
 
         #unit-lines {
             display: flex;
@@ -376,10 +348,6 @@
         }
 
 
-        /* =========================
-           Actions
-        ========================= */
-
         .form-actions {
             display: flex;
             align-items: center;
@@ -455,10 +423,6 @@
         }
 
 
-        /* =========================
-           Mobile
-        ========================= */
-
         @media (max-width: 600px) {
 
             .page-container {
@@ -510,10 +474,6 @@
 <div class="page-container">
 
 
-    <!-- =========================
-         Page Header
-    ========================== -->
-
     <div class="page-header">
 
         <h1>
@@ -527,10 +487,6 @@
     </div>
 
 
-    <!-- =========================
-         Form
-    ========================== -->
-
     <div class="form-card">
 
         <form method="post" id="waste-form">
@@ -539,10 +495,6 @@
 
             {{ form.as_p }}
 
-
-            <!-- =========================
-                 Unit Lines Section
-            ========================== -->
 
             <div class="section-divider">
                 <h2>Basket Contents</h2>
@@ -698,7 +650,75 @@
         .getElementById("empty-form-template")
         .innerHTML;
     const addBtn = document.getElementById("add-unit-row");
+    const departmentSelect = document.querySelector("#id_department");
 
+
+    // =========================
+    // SKU filtering by department
+    // =========================
+
+    function populateSkuSelect(selectEl, skus, previousValue) {
+
+        selectEl.innerHTML = '<option value="">---------</option>';
+
+        skus.forEach(function (sku) {
+
+            const option = document.createElement("option");
+            option.value = sku.id;
+            option.textContent = sku.name;
+
+            if (String(sku.id) === String(previousValue)) {
+                option.selected = true;
+            }
+
+            selectEl.appendChild(option);
+
+        });
+
+    }
+
+
+    function refreshAllSkuSelects(departmentId) {
+
+        if (!departmentId) {
+            return;
+        }
+
+        fetch(`/ajax/skus-for-department/${departmentId}/`)
+            .then(function (res) {
+                return res.json();
+            })
+            .then(function (skus) {
+
+                document
+                    .querySelectorAll('select[name$="-sku"]')
+                    .forEach(function (selectEl) {
+
+                        const previousValue = selectEl.value;
+                        populateSkuSelect(selectEl, skus, previousValue);
+
+                    });
+
+            })
+            .catch(function (err) {
+                console.error("Failed to load SKUs for department:", err);
+            });
+
+    }
+
+
+    if (departmentSelect) {
+
+        departmentSelect.addEventListener("change", function () {
+            refreshAllSkuSelects(departmentSelect.value);
+        });
+
+    }
+
+
+    // =========================
+    // Add / remove unit rows
+    // =========================
 
     addBtn.addEventListener("click", function () {
 
@@ -715,6 +735,12 @@
         unitLines.appendChild(wrapper.firstElementChild);
 
         totalFormsInput.value = newIndex + 1;
+
+        // Newly added rows use the unfiltered empty_form SKU list —
+        // filter it immediately if a department is already selected.
+        if (departmentSelect && departmentSelect.value) {
+            refreshAllSkuSelects(departmentSelect.value);
+        }
 
     });
 

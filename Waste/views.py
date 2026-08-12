@@ -3,6 +3,7 @@ from datetime import datetime
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
@@ -38,7 +39,13 @@ def actual_waste_list(request):
 def actual_waste_create(request):
     if request.method == "POST":
         form = ActualWasteForm(request.POST)
-        formset = ActualWasteUnitFormSet(request.POST)
+
+        department = None
+        department_id = request.POST.get("department")
+        if department_id:
+            department = Department.objects.filter(pk=department_id).first()
+
+        formset = ActualWasteUnitFormSet(request.POST, department=department)
 
         if form.is_valid() and formset.is_valid():
             waste = form.save()
@@ -61,7 +68,15 @@ def actual_waste_edit(request, pk):
 
     if request.method == "POST":
         form = ActualWasteForm(request.POST, instance=entry)
-        formset = ActualWasteUnitFormSet(request.POST, instance=entry)
+
+        department = entry.department
+        department_id = request.POST.get("department")
+        if department_id:
+            department = Department.objects.filter(pk=department_id).first() or entry.department
+
+        formset = ActualWasteUnitFormSet(
+            request.POST, instance=entry, department=department
+        )
 
         if form.is_valid() and formset.is_valid():
             form.save()
@@ -69,7 +84,7 @@ def actual_waste_edit(request, pk):
             return redirect("actual_waste_list")
     else:
         form = ActualWasteForm(instance=entry)
-        formset = ActualWasteUnitFormSet(instance=entry)
+        formset = ActualWasteUnitFormSet(instance=entry, department=entry.department)
 
     return render(
         request,
@@ -105,7 +120,13 @@ def received_waste_list(request):
 def received_waste_create(request):
     if request.method == "POST":
         form = ReceivedWasteForm(request.POST)
-        formset = ReceivedWasteUnitFormSet(request.POST)
+
+        department = None
+        department_id = request.POST.get("department")
+        if department_id:
+            department = Department.objects.filter(pk=department_id).first()
+
+        formset = ReceivedWasteUnitFormSet(request.POST, department=department)
 
         if form.is_valid() and formset.is_valid():
             waste = form.save()
@@ -129,19 +150,18 @@ def received_waste_create(request):
 
 
 def received_waste_edit(request, pk):
-    entry = get_object_or_404(
-        ReceivedWaste,
-        pk=pk,
-    )
+    entry = get_object_or_404(ReceivedWaste, pk=pk)
 
     if request.method == "POST":
-        form = ReceivedWasteForm(
-            request.POST,
-            instance=entry,
-        )
+        form = ReceivedWasteForm(request.POST, instance=entry)
+
+        department = entry.department
+        department_id = request.POST.get("department")
+        if department_id:
+            department = Department.objects.filter(pk=department_id).first() or entry.department
+
         formset = ReceivedWasteUnitFormSet(
-            request.POST,
-            instance=entry,
+            request.POST, instance=entry, department=department
         )
 
         if form.is_valid() and formset.is_valid():
@@ -151,7 +171,7 @@ def received_waste_edit(request, pk):
 
     else:
         form = ReceivedWasteForm(instance=entry)
-        formset = ReceivedWasteUnitFormSet(instance=entry)
+        formset = ReceivedWasteUnitFormSet(instance=entry, department=entry.department)
 
     return render(
         request,
@@ -163,6 +183,10 @@ def received_waste_edit(request, pk):
         },
     )
 
+def skus_for_department(request, department_id):
+    department = get_object_or_404(Department, pk=department_id)
+    skus = department.skus.order_by("name").values("id", "name")
+    return JsonResponse(list(skus), safe=False)
 
 @staff_member_required
 def waste_report(request):

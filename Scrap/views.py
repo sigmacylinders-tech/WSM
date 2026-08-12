@@ -520,8 +520,9 @@ def actual_scrap_edit(request, pk):
     )
 
 def production_department_list(request):
-
-    departments = Department.objects.all().order_by("name")
+    departments = Department.objects.exclude(
+        calculation_type__isnull=True
+    ).order_by("name")
 
     return render(
         request,

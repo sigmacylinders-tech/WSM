@@ -33,7 +33,9 @@ class Department(models.Model):
 
     calculation_type = models.CharField(
         max_length=10,
-        choices=CALCULATION_TYPES
+        choices=CALCULATION_TYPES,
+        null=True,
+        blank=True
     )
     uses_size = models.BooleanField(default=True)
     uses_thickness = models.BooleanField(default=False)
@@ -44,6 +46,7 @@ class Department(models.Model):
 
 class SKU(models.Model):
     name = models.CharField(max_length=100)
+    departments = models.ManyToManyField(Department, related_name="skus", blank=True)
     def __str__(self):
         return self.name
 
