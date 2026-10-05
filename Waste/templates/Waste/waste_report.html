@@ -165,6 +165,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
             padding: 18px 20px;
             border-bottom: 1px solid #e5e7eb;
         }
@@ -181,6 +183,15 @@
             color: #6b7280;
         }
 
+        .report-note {
+            margin: 0;
+            padding: 10px 20px;
+            border-bottom: 1px solid #fde68a;
+            background: #fffbeb;
+            color: #92400e;
+            font-size: 13px;
+        }
+
         /* =========================
            Table
         ========================= */
@@ -194,6 +205,10 @@
             width: 100%;
             border-collapse: collapse;
             min-width: 700px;
+        }
+
+        .report-table.wide {
+            min-width: 1000px;
         }
 
         .report-table thead {
@@ -257,6 +272,38 @@
             font-weight: 600;
         }
 
+        .project-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 9px;
+            border-radius: 6px;
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .serial-value {
+            font-family:
+                ui-monospace,
+                SFMono-Regular,
+                Menlo,
+                Consolas,
+                monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .date-value {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .muted {
+            color: #9ca3af;
+        }
+
         .number {
             font-variant-numeric: tabular-nums;
         }
@@ -275,16 +322,110 @@
             font-variant-numeric: tabular-nums;
         }
 
+        .variance-pct {
+            font-weight: 600;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
         .variance-positive {
             color: #16a34a;
         }
 
         .variance-negative {
-            color: red;
+            color: #dc2626;
         }
 
         .variance-zero {
             color: #6b7280;
+        }
+
+        /* =========================
+           Serial Summary + Status
+        ========================= */
+
+        .summary-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .summary-chip {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 130px;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+
+        .summary-chip-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #6b7280;
+        }
+
+        .summary-chip-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .summary-chip.good {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+        }
+
+        .summary-chip.good .summary-chip-value {
+            color: #16a34a;
+        }
+
+        .summary-chip.bad {
+            border-color: #fecaca;
+            background: #fef2f2;
+        }
+
+        .summary-chip.bad .summary-chip-value {
+            color: #dc2626;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 9px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-missing-recorded {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .status-missing-received {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .status-duplicate {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .all-matched {
+            padding: 30px 20px;
+            text-align: center;
+            color: #16a34a;
+            font-weight: 600;
+            font-size: 14px;
         }
 
         /* =========================
@@ -357,6 +498,15 @@
 
             .report-header {
                 padding: 16px;
+            }
+
+            .summary-chips {
+                padding: 14px 16px;
+            }
+
+            .summary-chip {
+                flex: 1 1 calc(50% - 10px);
+                min-width: 0;
             }
 
         }
@@ -461,6 +611,44 @@
             </div>
 
 
+            <!-- Project -->
+
+            <div class="filter-group">
+
+                <label for="project">
+                    Project
+                </label>
+
+                <select
+                    name="project"
+                    id="project"
+                >
+
+                    <option value="">
+                        All Projects
+                    </option>
+
+
+                    {% for project in projects %}
+
+                        <option
+                            value="{{ project.id }}"
+                            {% if project.id|stringformat:"s" == selected_project %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ project.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
             <!-- Filter Button -->
 
             <button
@@ -496,6 +684,16 @@
         </div>
 
 
+        {% if selected_project %}
+
+            <p class="report-note">
+                Weight is recorded per basket, so this table is not filtered by project.
+                It shows all baskets for the selected month and department.
+            </p>
+
+        {% endif %}
+
+
         <div class="table-wrapper">
 
             <table class="report-table">
@@ -521,6 +719,10 @@
                             Variance KG
                         </th>
 
+                        <th>
+                            Variance %
+                        </th>
+
                     </tr>
 
                 </thead>
@@ -538,19 +740,19 @@
                             <td>
 
                                 <span class="department-name">
-                                    {{ row.department }}
+                                    {{ row.department_name }}
                                 </span>
 
                             </td>
 
 
                             <td class="number kg-value">
-                                {{ row.received_kg|floatformat:2 }}
+                                {{ row.received|floatformat:2 }}
                             </td>
 
 
                             <td class="number kg-value">
-                                {{ row.recorded_kg|floatformat:2 }}
+                                {{ row.recorded|floatformat:2 }}
                             </td>
 
 
@@ -583,6 +785,40 @@
                             </td>
 
 
+                            <td class="number">
+
+
+                                {% if row.variance_pct is None %}
+
+                                    <span class="muted">—</span>
+
+
+                                {% elif row.variance_pct > 0 %}
+
+                                    <span class="variance-pct variance-positive">
+                                        +{{ row.variance_pct|floatformat:1 }}%
+                                    </span>
+
+
+                                {% elif row.variance_pct < 0 %}
+
+                                    <span class="variance-pct variance-negative">
+                                        {{ row.variance_pct|floatformat:1 }}%
+                                    </span>
+
+
+                                {% else %}
+
+                                    <span class="variance-pct variance-zero">
+                                        0.0%
+                                    </span>
+
+                                {% endif %}
+
+
+                            </td>
+
+
                         </tr>
 
 
@@ -592,7 +828,7 @@
                         <tr>
 
                             <td
-                                colspan="4"
+                                colspan="5"
                                 class="empty-state"
                             >
 
@@ -626,10 +862,11 @@
     </div>
 
 
-<!-- =========================
+    <!-- =========================
          Units Breakdown
     ========================== -->
-<div class="report-card">
+
+    <div class="report-card">
 
 
         <div class="report-header">
@@ -639,7 +876,7 @@
             </h2>
 
             <span>
-                Units received vs. recorded, by department and SKU
+                Units received vs. recorded, by department, SKU and project
             </span>
 
         </div>
@@ -647,7 +884,7 @@
 
         <div class="table-wrapper">
 
-            <table class="report-table">
+            <table class="report-table wide">
 
 
                 <thead>
@@ -667,6 +904,10 @@
                         </th>
 
                         <th>
+                            Project
+                        </th>
+
+                        <th>
                             Received Qty
                         </th>
 
@@ -676,6 +917,10 @@
 
                         <th>
                             Variance
+                        </th>
+
+                        <th>
+                            Variance %
                         </th>
 
                     </tr>
@@ -695,7 +940,7 @@
                             <td>
 
                                 <span class="department-name">
-                                    {{ row.department }}
+                                    {{ row.department_name }}
                                 </span>
 
                             </td>
@@ -703,9 +948,13 @@
 
                             <td>
 
-                                <span class="sku">
-                                    {{ row.sku }}
-                                </span>
+                                {% if row.sku_name %}
+                                    <span class="sku">
+                                        {{ row.sku_name }}
+                                    </span>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
 
                             </td>
 
@@ -713,19 +962,32 @@
                             <td>
 
                                 <span class="unit-badge">
-                                    {{ row.units }}
+                                    {{ row.unit_name }}
                                 </span>
 
                             </td>
 
 
-                            <td class="number">
-                                {{ row.received_nb_units }}
+                            <td>
+
+                                {% if row.project_name %}
+                                    <span class="project-badge">
+                                        {{ row.project_name }}
+                                    </span>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
+
                             </td>
 
 
                             <td class="number">
-                                {{ row.recorded_nb_units }}
+                                {{ row.received }}
+                            </td>
+
+
+                            <td class="number">
+                                {{ row.recorded }}
                             </td>
 
 
@@ -758,6 +1020,40 @@
                             </td>
 
 
+                            <td class="number">
+
+
+                                {% if row.variance_pct is None %}
+
+                                    <span class="muted">—</span>
+
+
+                                {% elif row.variance_pct > 0 %}
+
+                                    <span class="variance-pct variance-positive">
+                                        +{{ row.variance_pct|floatformat:1 }}%
+                                    </span>
+
+
+                                {% elif row.variance_pct < 0 %}
+
+                                    <span class="variance-pct variance-negative">
+                                        {{ row.variance_pct|floatformat:1 }}%
+                                    </span>
+
+
+                                {% else %}
+
+                                    <span class="variance-pct variance-zero">
+                                        0.0%
+                                    </span>
+
+                                {% endif %}
+
+
+                            </td>
+
+
                         </tr>
 
 
@@ -767,7 +1063,7 @@
                         <tr>
 
                             <td
-                                colspan="6"
+                                colspan="8"
                                 class="empty-state"
                             >
 
@@ -780,7 +1076,7 @@
                                 </span>
 
                                 <span class="empty-description">
-                                    Try changing the month or department filter.
+                                    Try changing the month, department or project filter.
                                 </span>
 
                             </td>
@@ -797,6 +1093,231 @@
             </table>
 
         </div>
+
+    </div>
+
+
+    <!-- =========================
+         Serial Reconciliation
+    ========================== -->
+
+    <div class="report-card">
+
+
+        <div class="report-header">
+
+            <h2>
+                Serial Number Reconciliation
+            </h2>
+
+            <span>
+                Complete cylinders received vs. recorded, matched by serial number
+            </span>
+
+        </div>
+
+
+        <div class="summary-chips">
+
+            <div class="summary-chip">
+                <span class="summary-chip-label">Received serials</span>
+                <span class="summary-chip-value">{{ serial_summary.received_count }}</span>
+            </div>
+
+            <div class="summary-chip">
+                <span class="summary-chip-label">Recorded serials</span>
+                <span class="summary-chip-value">{{ serial_summary.recorded_count }}</span>
+            </div>
+
+            <div class="summary-chip good">
+                <span class="summary-chip-label">Matched</span>
+                <span class="summary-chip-value">{{ serial_summary.matched_count }}</span>
+            </div>
+
+            <div class="summary-chip{% if serial_summary.issue_count %} bad{% endif %}">
+                <span class="summary-chip-label">Issues</span>
+                <span class="summary-chip-value">{{ serial_summary.issue_count }}</span>
+            </div>
+
+        </div>
+
+
+        {% if serial_issues %}
+
+            <div class="table-wrapper">
+
+                <table class="report-table wide">
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Serial Number
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Department
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                SKU
+                            </th>
+
+                            <th>
+                                Waste Unit
+                            </th>
+
+                            <th>
+                                Project
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for row in serial_issues %}
+
+
+                            <tr>
+
+
+                                <td>
+                                    <span class="serial-value">
+                                        {{ row.serial }}
+                                    </span>
+                                </td>
+
+
+                                <td>
+
+                                    {% if row.status == "Received, not recorded" %}
+
+                                        <span class="status-badge status-missing-recorded">
+                                            {{ row.status }}
+                                        </span>
+
+                                    {% elif row.status == "Recorded, not received" %}
+
+                                        <span class="status-badge status-missing-received">
+                                            {{ row.status }}
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="status-badge status-duplicate">
+                                            {{ row.status }}
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+                                    <span class="department-name">
+                                        {{ row.department_name }}
+                                    </span>
+                                </td>
+
+
+                                <td>
+                                    <span class="date-value">
+                                        {{ row.entry_date }}
+                                    </span>
+                                </td>
+
+
+                                <td>
+
+                                    {% if row.sku_name %}
+                                        <span class="sku">
+                                            {{ row.sku_name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="muted">—</span>
+                                    {% endif %}
+
+                                </td>
+
+
+                                <td>
+                                    <span class="unit-badge">
+                                        {{ row.unit_name }}
+                                    </span>
+                                </td>
+
+
+                                <td>
+
+                                    {% if row.project_name %}
+                                        <span class="project-badge">
+                                            {{ row.project_name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="muted">—</span>
+                                    {% endif %}
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+
+                </table>
+
+            </div>
+
+
+        {% elif serial_summary.received_count or serial_summary.recorded_count %}
+
+
+            <div class="all-matched">
+                ✓ All serial numbers match between received and recorded waste.
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    ∅
+                </div>
+
+                <span class="empty-title">
+                    No serial numbers recorded
+                </span>
+
+                <span class="empty-description">
+                    No complete cylinders were entered for the selected filters.
+                </span>
+
+            </div>
+
+
+        {% endif %}
+
 
     </div>
 

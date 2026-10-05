@@ -336,13 +336,19 @@ class ReceivedScrapForm(forms.ModelForm):
         fields = [
             "department",
             "date",
+            "time",
             "received_scrap_kg",
         ]
 
         widgets = {
             "department": forms.Select(),
             "date": forms.DateInput(
-                attrs={"type": "date"}
+                attrs={"type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "time": forms.TimeInput(
+                attrs={"type": "time"},
+                format="%H:%M",
             ),
             "received_scrap_kg": forms.NumberInput(
                 attrs={
@@ -351,29 +357,3 @@ class ReceivedScrapForm(forms.ModelForm):
                 }
             ),
         }
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        department = cleaned_data.get("department")
-        date = cleaned_data.get("date")
-
-        if department and date:
-
-            existing = ReceivedScrap.objects.filter(
-                department=department,
-                date=date,
-            )
-
-            # When editing, don't consider the current object
-            if self.instance.pk:
-                existing = existing.exclude(
-                    pk=self.instance.pk
-                )
-
-            if existing.exists():
-                raise forms.ValidationError(
-                    "Received scrap already exists for this department on this date."
-                )
-
-        return cleaned_data

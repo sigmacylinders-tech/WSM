@@ -1,14 +1,16 @@
+import re
 from calendar import monthrange
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, date
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Sum
+from django.db.models import Sum, F
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
 from Scrap.models import SKU
-from .models import ActualWaste, Department, ReceivedWaste, ReceivedWasteUnit, WasteUnits, ActualWasteUnit
+from .models import ActualWaste, Department, ReceivedWaste, ReceivedWasteUnit, WasteUnits, ActualWasteUnit, Project
 from .forms import ActualWasteForm, ReceivedWasteForm, ActualWasteUnitFormSet, ReceivedWasteUnitFormSet
 
 
@@ -21,7 +23,11 @@ def actual_waste_list(request):
     entries = (
         ActualWaste.objects
         .select_related("department")
-        .prefetch_related("unit_lines__sku", "unit_lines__units")
+        .prefetch_related(
+            "unit_lines__sku",
+            "unit_lines__units",
+            "unit_lines__project",
+        )
         .filter(date=selected_date)
         .order_by("department__name")
     )
@@ -98,11 +104,14 @@ def received_waste_list(request):
         "date",
         timezone.localdate().isoformat()
     )
-
     entries = (
         ReceivedWaste.objects
         .select_related("department")
-        .prefetch_related("unit_lines__sku", "unit_lines__units")
+        .prefetch_related(
+            "unit_lines__sku",
+            "unit_lines__units",
+            "unit_lines__project",
+        )
         .filter(date=selected_date)
         .order_by("department__name")
     )
@@ -188,264 +197,233 @@ def skus_for_department(request, department_id):
     skus = department.skus.order_by("name").values("id", "name")
     return JsonResponse(list(skus), safe=False)
 
-@staff_member_required
+# =========================
+# Helpers
+# =========================
+
+# Serials may be separated by new lines, commas or semicolons
+SERIAL_SEPARATORS = re.compile(r"[\n,;]+")
+
+UNIT_GROUP_FIELDS = {
+    "department_name": F("waste__department__name"),
+    "sku_name": F("sku__name"),
+    "unit_name": F("units__name"),
+    "project_name": F("project__name"),
+}
+
+SERIAL_CONTEXT_FIELDS = {
+    **UNIT_GROUP_FIELDS,
+    "entry_date": F("waste__date"),
+}
+
+
+def parse_month(value):
+    """'YYYY-MM' -> first day of that month. Falls back to the current month."""
+    try:
+        year, month = map(int, value.split("-"))
+        return date(year, month, 1)
+    except (AttributeError, TypeError, ValueError):
+        return timezone.localdate().replace(day=1)
+
+
+def parse_id(value):
+    """Returns an int id, or None for empty or invalid input."""
+    value = (value or "").strip()
+    return int(value) if value.isdigit() else None
+
+
+def parse_serials(text):
+    """Splits a serial-number text field into a normalized set of serials."""
+    serials = set()
+    for part in SERIAL_SEPARATORS.split(text or ""):
+        serial = "".join(part.split()).upper()  # drop all spaces, ignore case
+        if serial:
+            serials.add(serial)
+    return serials
+
+
+def variance_pct(recorded, received):
+    if not received:
+        return None
+    return round((recorded - received) * 100 / received, 1)
+
+
+def build_comparison(received_rows, recorded_rows, key_fields):
+    """
+    Merges received and recorded totals on key_fields.
+    Each input row must contain the key fields plus "total".
+    """
+    data = {}
+
+    for side, rows in (("received", received_rows), ("recorded", recorded_rows)):
+        for row in rows:
+            key = tuple(row[field] for field in key_fields)
+
+            entry = data.setdefault(
+                key,
+                {
+                    **{field: row[field] for field in key_fields},
+                    "received": 0,
+                    "recorded": 0,
+                },
+            )
+            entry[side] += row["total"] or 0
+
+    report = []
+
+    for key in sorted(data, key=lambda k: tuple(value or "" for value in k)):
+        entry = data[key]
+        entry["variance"] = entry["recorded"] - entry["received"]
+        entry["variance_pct"] = variance_pct(entry["recorded"], entry["received"])
+        report.append(entry)
+
+    return report
+
+
+def collect_serials(lines):
+    """Maps each normalized serial to the line(s) it appears on."""
+    found = defaultdict(list)
+
+    rows = (
+        lines
+        .exclude(serial_number="")
+        .values("serial_number", **SERIAL_CONTEXT_FIELDS)
+    )
+
+    for row in rows:
+        text = row.pop("serial_number")
+        for serial in parse_serials(text):
+            found[serial].append(row)
+
+    return found
+
+
+def reconcile_serials(received, recorded):
+    issues = []
+
+    for serial in sorted(received.keys() - recorded.keys()):
+        issues.append({
+            "serial": serial,
+            "status": "Received, not recorded",
+            **received[serial][0],
+        })
+
+    for serial in sorted(recorded.keys() - received.keys()):
+        issues.append({
+            "serial": serial,
+            "status": "Recorded, not received",
+            **recorded[serial][0],
+        })
+
+    for label, found in (("received", received), ("recorded", recorded)):
+        for serial, rows in sorted(found.items()):
+            if len(rows) > 1:
+                issues.append({
+                    "serial": serial,
+                    "status": f"Entered {len(rows)} times in {label}",
+                    **rows[0],
+                })
+
+    summary = {
+        "received_count": len(received),
+        "recorded_count": len(recorded),
+        "matched_count": len(received.keys() & recorded.keys()),
+        "issue_count": len(issues),
+    }
+
+    return issues, summary
+
+
+# =========================
+# View
+# =========================
+
 def waste_report(request):
 
-    selected_month = request.GET.get(
-        "month",
-        timezone.localdate().strftime("%Y-%m")
+    start_date = parse_month(request.GET.get("month"))
+    end_date = start_date.replace(
+        day=monthrange(start_date.year, start_date.month)[1]
     )
 
-    selected_department = request.GET.get(
-        "department",
-        ""
-    )
+    department_id = parse_id(request.GET.get("department"))
+    project_id = parse_id(request.GET.get("project"))
 
 
-    year, month = map(
-        int,
-        selected_month.split("-")
-    )
+    # Filters shared by all querysets
+    header_filter = {"date__range": (start_date, end_date)}
+
+    if department_id:
+        header_filter["department_id"] = department_id
+
+    line_filter = {f"waste__{key}": value for key, value in header_filter.items()}
+
+    if project_id:
+        line_filter["project_id"] = project_id
 
 
-    start_date = datetime(
-        year,
-        month,
-        1
-    ).date()
-
-
-    end_date = datetime(
-        year,
-        month,
-        monthrange(year, month)[1]
-    ).date()
-
-
-    departments = Department.objects.all()
-    department_lookup = {
-        dept.pk: dept
-        for dept in departments
-    }
+    received_lines = ReceivedWasteUnit.objects.filter(**line_filter)
+    recorded_lines = ActualWasteUnit.objects.filter(**line_filter)
 
 
     # =========================
-    # Base querysets (headers)
+    # Weight per department (basket level, not filtered by project)
     # =========================
 
-    received_qs = ReceivedWaste.objects.filter(
-        date__range=(start_date, end_date)
+    received_weight = (
+        ReceivedWaste.objects
+        .filter(**header_filter)
+        .values(department_name=F("department__name"))
+        .annotate(total=Sum("waste_kg"))
+        .order_by()
     )
 
-    actual_qs = ActualWaste.objects.filter(
-        date__range=(start_date, end_date)
+    recorded_weight = (
+        ActualWaste.objects
+        .filter(**header_filter)
+        .values(department_name=F("department__name"))
+        .annotate(total=Sum("waste_kg"))
+        .order_by()
     )
 
-
-    if selected_department:
-
-        received_qs = received_qs.filter(
-            department_id=selected_department
-        )
-
-        actual_qs = actual_qs.filter(
-            department_id=selected_department
-        )
-
-
-    # =========================
-    # Weight totals per department
-    # (basket-level weight — cannot be split by SKU/unit)
-    # =========================
-
-    received_weight_totals = (
-        received_qs
-        .values("department_id")
-        .annotate(total_kg=Sum("waste_kg"))
-    )
-
-    actual_weight_totals = (
-        actual_qs
-        .values("department_id")
-        .annotate(total_kg=Sum("waste_kg"))
-    )
-
-
-    weight_report_data = {}
-
-
-    for row in received_weight_totals:
-
-        dept_id = row["department_id"]
-
-        weight_report_data.setdefault(
-            dept_id,
-            {
-                "department": department_lookup.get(dept_id),
-                "received_kg": 0,
-                "recorded_kg": 0,
-            },
-        )
-
-        weight_report_data[dept_id]["received_kg"] += row["total_kg"] or 0
-
-
-    for row in actual_weight_totals:
-
-        dept_id = row["department_id"]
-
-        weight_report_data.setdefault(
-            dept_id,
-            {
-                "department": department_lookup.get(dept_id),
-                "received_kg": 0,
-                "recorded_kg": 0,
-            },
-        )
-
-        weight_report_data[dept_id]["recorded_kg"] += row["total_kg"] or 0
-
-
-    weight_report = []
-
-    for row in weight_report_data.values():
-
-        row["variance"] = (
-            row["recorded_kg"]
-            -
-            row["received_kg"]
-        )
-
-        weight_report.append(row)
-
-
-    weight_report.sort(
-        key=lambda r: r["department"].name
+    weight_report = build_comparison(
+        received_weight,
+        recorded_weight,
+        key_fields=["department_name"],
     )
 
 
     # =========================
-    # Unit counts per department + SKU + unit type
-    # (line-level quantities — no weight available here)
+    # Units per department + SKU + unit type + project
     # =========================
 
-    received_unit_totals = (
-        ReceivedWasteUnit.objects
-        .filter(
-            waste__date__range=(start_date, end_date)
-        )
-        .filter(
-            waste__department_id=selected_department
-        ) if selected_department else ReceivedWasteUnit.objects.filter(
-            waste__date__range=(start_date, end_date)
-        )
+    received_units = (
+        received_lines
+        .values(**UNIT_GROUP_FIELDS)
+        .annotate(total=Sum("nb_of_units"))
+        .order_by()
     )
 
-    received_unit_totals = (
-        received_unit_totals
-        .values("waste__department_id", "sku_id", "units_id")
-        .annotate(total_units=Sum("nb_of_units"))
+    recorded_units = (
+        recorded_lines
+        .values(**UNIT_GROUP_FIELDS)
+        .annotate(total=Sum("nb_of_units"))
+        .order_by()
     )
 
-
-    actual_unit_totals = (
-        ActualWasteUnit.objects
-        .filter(
-            waste__date__range=(start_date, end_date)
-        )
-        .filter(
-            waste__department_id=selected_department
-        ) if selected_department else ActualWasteUnit.objects.filter(
-            waste__date__range=(start_date, end_date)
-        )
-    )
-
-    actual_unit_totals = (
-        actual_unit_totals
-        .values("waste__department_id", "sku_id", "units_id")
-        .annotate(total_units=Sum("nb_of_units"))
+    units_report = build_comparison(
+        received_units,
+        recorded_units,
+        key_fields=list(UNIT_GROUP_FIELDS),
     )
 
 
-    sku_lookup = {
-        sku.pk: sku
-        for sku in SKU.objects.all()
-    }
+    # =========================
+    # Serial number reconciliation
+    # =========================
 
-    unit_lookup = {
-        unit.pk: unit
-        for unit in WasteUnits.objects.all()
-    }
-
-
-    units_report_data = {}
-
-
-    for row in received_unit_totals:
-
-        key = (
-            row["waste__department_id"],
-            row["sku_id"],
-            row["units_id"],
-        )
-
-        units_report_data.setdefault(
-            key,
-            {
-                "department": department_lookup.get(row["waste__department_id"]),
-                "sku": sku_lookup.get(row["sku_id"]),
-                "units": unit_lookup.get(row["units_id"]),
-
-                "received_nb_units": 0,
-                "recorded_nb_units": 0,
-            },
-        )
-
-        units_report_data[key]["received_nb_units"] += row["total_units"] or 0
-
-
-    for row in actual_unit_totals:
-
-        key = (
-            row["waste__department_id"],
-            row["sku_id"],
-            row["units_id"],
-        )
-
-        units_report_data.setdefault(
-            key,
-            {
-                "department": department_lookup.get(row["waste__department_id"]),
-                "sku": sku_lookup.get(row["sku_id"]),
-                "units": unit_lookup.get(row["units_id"]),
-
-                "received_nb_units": 0,
-                "recorded_nb_units": 0,
-            },
-        )
-
-        units_report_data[key]["recorded_nb_units"] += row["total_units"] or 0
-
-
-    units_report = []
-
-    for row in units_report_data.values():
-
-        row["variance"] = (
-            row["recorded_nb_units"]
-            -
-            row["received_nb_units"]
-        )
-
-        units_report.append(row)
-
-
-    units_report.sort(
-        key=lambda r: (
-            r["department"].name if r["department"] else "",
-            r["sku"].name if r["sku"] else "",
-            r["units"].name if r["units"] else "",
-        )
+    serial_issues, serial_summary = reconcile_serials(
+        collect_serials(received_lines),
+        collect_serials(recorded_lines),
     )
 
 
@@ -455,8 +433,14 @@ def waste_report(request):
         {
             "weight_report": weight_report,
             "units_report": units_report,
-            "departments": departments,
-            "selected_month": selected_month,
-            "selected_department": selected_department,
-        }
+            "serial_issues": serial_issues,
+            "serial_summary": serial_summary,
+
+            "departments": Department.objects.order_by("name"),
+            "projects": Project.objects.order_by("name"),
+
+            "selected_month": start_date.strftime("%Y-%m"),
+            "selected_department": str(department_id) if department_id else "",
+            "selected_project": str(project_id) if project_id else "",
+        },
     )

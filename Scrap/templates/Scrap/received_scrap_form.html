@@ -19,6 +19,15 @@
             margin-bottom: 15px;
         }
 
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -108,21 +117,42 @@
         </div>
 
 
-        <!-- Date -->
+        <!-- Date and Time -->
 
-        <div class="form-group">
+        <div class="form-row">
 
-            <label for="{{ form.date.id_for_label }}">
-                Date
-            </label>
+            <div class="form-group">
 
-            {{ form.date }}
+                <label for="{{ form.date.id_for_label }}">
+                    Date
+                </label>
 
-            {% for error in form.date.errors %}
-                <div class="field-error">
-                    {{ error }}
-                </div>
-            {% endfor %}
+                {{ form.date }}
+
+                {% for error in form.date.errors %}
+                    <div class="field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="{{ form.time.id_for_label }}">
+                    Time
+                </label>
+
+                {{ form.time }}
+
+                {% for error in form.time.errors %}
+                    <div class="field-error">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+
+            </div>
 
         </div>
 

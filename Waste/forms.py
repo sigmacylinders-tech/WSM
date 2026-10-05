@@ -1,12 +1,34 @@
 from django import forms
+from django.db.models import Q
 from django.forms import inlineformset_factory, BaseInlineFormSet
 
 from .models import (
     ActualWaste,
     ActualWasteUnit,
+    Project,
     ReceivedWaste,
     ReceivedWasteUnit,
 )
+
+
+UNIT_LINE_FIELDS = ["sku", "units", "nb_of_units", "project", "serial_number"]
+
+UNIT_LINE_WIDGETS = {
+    "serial_number": forms.Textarea(
+        attrs={
+            "rows": 2,
+            "placeholder": "Complete cylinders only, one serial per line",
+        }
+    ),
+}
+
+
+def available_projects(instance):
+    """Active projects, plus the line's current project if it was deactivated."""
+    current_project_id = getattr(instance, "project_id", None)
+    return Project.objects.filter(
+        Q(is_active=True) | Q(pk=current_project_id)
+    ).order_by("name")
 
 
 # =========================
@@ -17,19 +39,24 @@ class ActualWasteForm(forms.ModelForm):
     class Meta:
         model = ActualWaste
         fields = ["department", "waste_kg", "date"]
-        widgets = {"date": forms.DateInput(attrs={"type": "date"})}
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        }
 
 
 class ActualWasteUnitForm(forms.ModelForm):
     class Meta:
         model = ActualWasteUnit
-        fields = ["sku", "units", "nb_of_units"]
+        fields = UNIT_LINE_FIELDS
+        widgets = UNIT_LINE_WIDGETS
 
     def __init__(self, *args, department=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if department is not None:
             self.fields["sku"].queryset = department.skus.order_by("name")
+
+        self.fields["project"].queryset = available_projects(self.instance)
 
 
 class BaseActualWasteUnitFormSet(BaseInlineFormSet):
@@ -70,7 +97,7 @@ ActualWasteUnitFormSet = inlineformset_factory(
     ActualWasteUnit,
     form=ActualWasteUnitForm,
     formset=BaseActualWasteUnitFormSet,
-    fields=["sku", "units", "nb_of_units"],
+    fields=UNIT_LINE_FIELDS,
     extra=1,
     can_delete=True,
     min_num=1,
@@ -86,7 +113,9 @@ class ReceivedWasteForm(forms.ModelForm):
     class Meta:
         model = ReceivedWaste
         fields = ["department", "waste_kg", "date"]
-        widgets = {"date": forms.DateInput(attrs={"type": "date"})}
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        }
 
     # clean() removed — department+date duplicates are now expected,
     # since operators may receive multiple baskets per department per day.
@@ -95,13 +124,16 @@ class ReceivedWasteForm(forms.ModelForm):
 class ReceivedWasteUnitForm(forms.ModelForm):
     class Meta:
         model = ReceivedWasteUnit
-        fields = ["sku", "units", "nb_of_units"]
+        fields = UNIT_LINE_FIELDS
+        widgets = UNIT_LINE_WIDGETS
 
     def __init__(self, *args, department=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         if department is not None:
             self.fields["sku"].queryset = department.skus.order_by("name")
+
+        self.fields["project"].queryset = available_projects(self.instance)
 
 
 class BaseReceivedWasteUnitFormSet(BaseInlineFormSet):
@@ -142,7 +174,7 @@ ReceivedWasteUnitFormSet = inlineformset_factory(
     ReceivedWasteUnit,
     form=ReceivedWasteUnitForm,
     formset=BaseReceivedWasteUnitFormSet,
-    fields=["sku", "units", "nb_of_units"],
+    fields=UNIT_LINE_FIELDS,
     extra=1,
     can_delete=True,
     min_num=1,

@@ -6,8 +6,11 @@ from decimal import Decimal
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 from .forms import CoilForm, ActualScrapForm, ProductionEntryForm, ReceivedScrapForm
 from .models import ProductionEntry, Department, ActualScrap, Coil, ReceivedScrap
@@ -670,104 +673,57 @@ def production_entry_edit(
     )
 
 def received_scrap_list(request):
-
-    selected_date = request.GET.get("date")
-
-    if not selected_date:
-        selected_date = timezone.localdate().isoformat()
+    selected_date = parse_date(request.GET.get("date") or "") or timezone.localdate()
 
     received_scraps = (
         ReceivedScrap.objects
         .select_related("department")
         .filter(date=selected_date)
-        .order_by("department__name")
+        .order_by("department__name", "time")
     )
+
+    total_kg = received_scraps.aggregate(total=Sum("received_scrap_kg"))["total"]
 
     return render(
         request,
         "scrap/received_scrap_list.html",
         {
             "received_scraps": received_scraps,
-            "selected_date": selected_date,
-        }
+            "selected_date": selected_date.isoformat(),
+            "total_kg": total_kg,
+        },
     )
 
 def received_scrap_create(request):
-
     if request.method == "POST":
-
         form = ReceivedScrapForm(request.POST)
-
         if form.is_valid():
-
-            try:
-                with transaction.atomic():
-                    form.save()
-
-                return redirect("received_scrap_list")
-
-            except IntegrityError:
-                form.add_error(
-                    None,
-                    "Received scrap already exists for this department and date."
-                )
-
+            scrap = form.save()
+            return redirect(f"{reverse('received_scrap_list')}?date={scrap.date.isoformat()}")
     else:
-        form = ReceivedScrapForm(
-            initial={
-                "date": timezone.localdate()
-            }
-        )
+        form = ReceivedScrapForm()  # date and time pre-filled from model defaults
 
     return render(
         request,
         "scrap/received_scrap_form.html",
-        {
-            "form": form,
-            "title": "Add Received Scrap",
-        }
+        {"form": form, "title": "Add Received Scrap"},
     )
 
 def received_scrap_edit(request, pk):
-
-    received_scrap = get_object_or_404(
-        ReceivedScrap,
-        pk=pk
-    )
+    received_scrap = get_object_or_404(ReceivedScrap, pk=pk)
 
     if request.method == "POST":
-
-        form = ReceivedScrapForm(
-            request.POST,
-            instance=received_scrap
-        )
-
+        form = ReceivedScrapForm(request.POST, instance=received_scrap)
         if form.is_valid():
-
-            try:
-                with transaction.atomic():
-                    form.save()
-
-                return redirect("received_scrap_list")
-
-            except IntegrityError:
-                form.add_error(
-                    None,
-                    "Received scrap already exists for this department and date."
-                )
-
+            scrap = form.save()
+            return redirect(f"{reverse('received_scrap_list')}?date={scrap.date.isoformat()}")
     else:
-        form = ReceivedScrapForm(
-            instance=received_scrap
-        )
+        form = ReceivedScrapForm(instance=received_scrap)
 
     return render(
         request,
         "scrap/received_scrap_form.html",
-        {
-            "form": form,
-            "title": "Edit Received Scrap",
-        }
+        {"form": form, "title": "Edit Received Scrap"},
     )
 
 @staff_member_required

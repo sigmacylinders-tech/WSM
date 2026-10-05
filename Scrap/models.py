@@ -1,4 +1,9 @@
 from django.db import models
+from django.utils import timezone
+
+def current_time():
+    """Current local time, trimmed to hour and minute."""
+    return timezone.localtime().time().replace(second=0, microsecond=0)
 
 class Coil(models.Model):
     coil_number = models.CharField(
@@ -181,46 +186,43 @@ class ProductionEntry(models.Model):
         ).first()
 
 class ActualScrap(models.Model):
-
-    department = models.ForeignKey(
-        Department,
-        on_delete=models.PROTECT
-    )
-
+    department = models.ForeignKey(Department, on_delete=models.PROTECT)
     coil = models.ForeignKey(
         Coil,
         on_delete=models.PROTECT,
         blank=True,
-        null=True
+        null=True,
     )
-
     actual_scrap_kg = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
-        blank=True
+        blank=True,
     )
+    entered_at = models.DateField(default=timezone.localdate)
+    entered_time = models.TimeField(default=current_time)
 
-    entered_at = models.DateField()
+    class Meta:
+        ordering = ["-entered_at", "-entered_time"]
 
     def __str__(self):
         return (
             f"{self.department} - "
-            f"{self.entered_at} - "
+            f"{self.entered_at} {self.entered_time:%H:%M} - "
             f"{self.actual_scrap_kg} kg"
         )
 
 class ReceivedScrap(models.Model):
-    department = models.ForeignKey(Department,on_delete=models.PROTECT)
-    date = models.DateField()
-    received_scrap_kg = models.DecimalField(max_digits=12,decimal_places=2)
+    department = models.ForeignKey(Department, on_delete=models.PROTECT)
+    date = models.DateField(default=timezone.localdate)
+    time = models.TimeField(default=current_time)
+    received_scrap_kg = models.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["department", "date"],
-                name="unique_received_scrap_per_department_date"
-            )
-        ]
+        ordering = ["-date", "-time"]
+
     def __str__(self):
-        return f"Received Scrap from  {self.department} at {self.date}"
+        return (
+            f"Received scrap from {self.department} "
+            f"at {self.date} {self.time:%H:%M}"
+        )

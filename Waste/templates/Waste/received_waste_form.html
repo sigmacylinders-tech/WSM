@@ -203,9 +203,13 @@
         }
 
 
+        /*
+            Row 1: SKU | Unit | Qty | Remove
+            Row 2: Project | Serial number (spans the rest)
+        */
         .unit-line {
             display: grid;
-            grid-template-columns: 1.2fr 1fr 100px 36px;
+            grid-template-columns: 1.2fr 1fr 100px 40px;
 
             gap: 10px;
             align-items: start;
@@ -216,6 +220,16 @@
 
             border: 1px solid #e5e7eb;
             border-radius: 8px;
+        }
+
+
+        .unit-line .field-project {
+            grid-column: 1 / 2;
+        }
+
+
+        .unit-line .field-serial {
+            grid-column: 2 / -1;
         }
 
 
@@ -238,6 +252,12 @@
         .unit-line input,
         .unit-line select {
             min-height: 40px;
+        }
+
+
+        .unit-line textarea {
+            min-height: 40px;
+            resize: vertical;
         }
 
 
@@ -445,6 +465,12 @@
             }
 
 
+            .unit-line .field-project,
+            .unit-line .field-serial {
+                grid-column: 1 / -1;
+            }
+
+
             .unit-line .delete-cell {
                 justify-content: flex-end;
             }
@@ -482,6 +508,7 @@
 
         <p>
             Enter the basket details, then list every SKU, unit type, and quantity inside it.
+            Add the project and serial numbers where relevant.
         </p>
 
     </div>
@@ -523,6 +550,8 @@
                             </div>
                         {% endif %}
 
+                        <!-- Row 1 -->
+
                         <div>
                             {{ line_form.sku.label_tag }}
                             {{ line_form.sku }}
@@ -563,6 +592,20 @@
                             {% endfor %}
                         </div>
 
+                        <!-- Row 2 -->
+
+                        <div class="field-project">
+                            {{ line_form.project.label_tag }}
+                            {{ line_form.project }}
+                            {{ line_form.project.errors }}
+                        </div>
+
+                        <div class="field-serial">
+                            {{ line_form.serial_number.label_tag }}
+                            {{ line_form.serial_number }}
+                            {{ line_form.serial_number.errors }}
+                        </div>
+
                     </div>
                 {% endfor %}
             </div>
@@ -579,7 +622,8 @@
             <div class="form-actions">
 
 
-                  <a  href="{% url 'received_waste_list' %}"
+                <a
+                    href="{% url 'received_waste_list' %}"
                     class="cancel-button"
                 >
                     Cancel
@@ -607,6 +651,8 @@
 <template id="empty-form-template">
     <div class="unit-line" data-form-index="__prefix__">
 
+        <!-- Row 1 -->
+
         <div>
             {{ formset.empty_form.sku.label_tag }}
             {{ formset.empty_form.sku }}
@@ -631,6 +677,18 @@
             >
                 &times;
             </button>
+        </div>
+
+        <!-- Row 2 -->
+
+        <div class="field-project">
+            {{ formset.empty_form.project.label_tag }}
+            {{ formset.empty_form.project }}
+        </div>
+
+        <div class="field-serial">
+            {{ formset.empty_form.serial_number.label_tag }}
+            {{ formset.empty_form.serial_number }}
         </div>
 
     </div>

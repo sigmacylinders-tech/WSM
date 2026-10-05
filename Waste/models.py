@@ -3,6 +3,15 @@ from django.db import models
 
 from Scrap.models import Department, SKU
 
+class Project(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
 
 class WasteUnits(models.Model):
     name = models.CharField(max_length=200)
@@ -27,6 +36,18 @@ class ActualWasteUnit(models.Model):
     sku = models.ForeignKey(SKU, on_delete=models.PROTECT, null=True)
     units = models.ForeignKey(WasteUnits, on_delete=models.PROTECT)
     nb_of_units = models.PositiveIntegerField(default=1)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="actual_waste_units",
+    )
+    serial_number = models.TextField(
+        "Serial number (if complete cylinder)",
+        blank=True,
+        help_text="Fill in only if this is a complete cylinder.",
+    )
 
     class Meta:
         constraints = [
@@ -56,6 +77,18 @@ class ReceivedWasteUnit(models.Model):
     sku = models.ForeignKey(SKU, on_delete=models.PROTECT,null=True)
     units = models.ForeignKey(WasteUnits, on_delete=models.PROTECT)
     nb_of_units = models.PositiveIntegerField(default=1)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="received_waste_units",
+    )
+    serial_number = models.TextField(
+        "Serial number (if complete cylinder)",
+        blank=True,
+        help_text="Fill in only if this is a complete cylinder.",
+    )
 
     class Meta:
         constraints = [
