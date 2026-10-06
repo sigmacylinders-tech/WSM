@@ -1,50 +1,140 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <!-- Main fix: without this, phones render the page as a tiny desktop page -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Received Scrap</title>
 
     <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 18px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 24px 16px;
+            background-color: #f4f6f8;
+            color: #222;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
             margin-bottom: 20px;
         }
 
-        .filters {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 6px;
+        h1 {
+            font-size: 1.75rem;
+            margin: 0;
         }
 
-        .filters label {
-            font-weight: bold;
-            margin-right: 8px;
+        h2 {
+            font-size: 1.3rem;
+            margin: 0 0 16px;
         }
 
-        .filters input {
-            padding: 7px;
-        }
-
+        /* Buttons */
         button,
         .btn {
-            padding: 8px 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            font-family: inherit;
             border: none;
-            border-radius: 4px;
-            color: white;
+            border-radius: 8px;
+            color: #fff;
             background-color: #198754;
             text-decoration: none;
             cursor: pointer;
+            white-space: nowrap;
+        }
+
+        button:hover,
+        .btn:hover {
+            background-color: #157347;
         }
 
         .btn-edit {
+            min-height: 46px;
+            padding: 10px 22px;
             background-color: #0d6efd;
+        }
+
+        .btn-edit:hover {
+            background-color: #0b5ed7;
+        }
+
+        /* Filter bar */
+        .filters {
+            display: flex;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-field {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filters label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .filters input {
+            width: 100%;
+            min-height: 52px;
+            padding: 12px 14px;
+            font-size: 18px; /* 16px+ stops iPhones from zooming in on tap */
+            font-family: inherit;
+            border: 1px solid #b8c0c8;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #222;
+        }
+
+        .filters input:focus {
+            outline: 3px solid rgba(25, 135, 84, 0.35);
+            border-color: #198754;
+        }
+
+        /* Table */
+        .table-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
         }
 
         table {
@@ -54,149 +144,207 @@
 
         th,
         td {
-            border: 1px solid #ddd;
-            padding: 10px;
+            border-bottom: 1px solid #e3e6ea;
+            padding: 14px 16px;
             text-align: left;
+            vertical-align: middle;
         }
 
         th {
-            background-color: #f5f5f5;
+            background-color: #eef1f4;
+            font-size: 16px;
         }
 
-        tr:nth-child(even) {
-            background-color: #fafafa;
+        tbody tr:nth-child(even) {
+            background-color: #fafbfc;
         }
 
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .num {
+            text-align: right;
+        }
+
+        .empty {
+            text-align: center;
+            color: #666;
+            padding: 32px 16px;
+        }
+
+        /* Total */
         .total {
-            margin-top: 15px;
+            margin-top: 16px;
+            padding: 16px 20px;
+            font-size: 1.15rem;
             font-weight: bold;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .record-count {
             font-weight: normal;
             color: #666;
         }
+
+        /* Phones: turn each table row into a card */
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .header .btn,
+            .filters button {
+                width: 100%;
+            }
+
+            .filters {
+                padding: 16px;
+            }
+
+            .filter-field {
+                min-width: 100%;
+            }
+
+            .table-card {
+                background: transparent;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            table,
+            tbody,
+            tr,
+            td {
+                display: block;
+                width: 100%;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody tr {
+                margin-bottom: 14px;
+                padding: 8px 16px;
+                background: #fff !important;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 0;
+                text-align: right;
+            }
+
+            tbody tr td:last-child {
+                border-bottom: none;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #555;
+                text-align: left;
+            }
+
+            td.actions::before {
+                content: none;
+            }
+
+            td.actions .btn-edit {
+                width: 100%;
+                margin-top: 4px;
+            }
+
+            td.empty {
+                display: block;
+                text-align: center;
+            }
+
+            td.empty::before {
+                content: none;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-<div class="header">
+<div class="page">
 
-    <h1>
-        Received Scrap
-    </h1>
-
-    <a
-        href="{% url 'received_scrap_create' %}"
-        class="btn"
-    >
-        + Add Received Scrap
-    </a>
-
-</div>
-
-
-<!-- Date filter -->
-
-<form method="get" class="filters">
-
-    <label for="date">
-        Date:
-    </label>
-
-    <input
-        type="date"
-        name="date"
-        id="date"
-        value="{{ selected_date }}"
-        required
-    >
-
-    <button type="submit">
-        Filter
-    </button>
-
-</form>
-
-
-<h2>
-    Received Scrap for {{ selected_date }}
-</h2>
-
-
-<table>
-
-    <thead>
-        <tr>
-            <th>Department</th>
-            <th>Time</th>
-            <th>Received Scrap (KG)</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-
-    <tbody>
-
-        {% for scrap in received_scraps %}
-
-            <tr>
-
-                <td>
-                    {{ scrap.department.name }}
-                </td>
-
-                <td>
-                    {{ scrap.time|time:"H:i" }}
-                </td>
-
-                <td>
-                    {{ scrap.received_scrap_kg }}
-                </td>
-
-                <td>
-
-                    <a
-                        href="{% url 'received_scrap_edit' scrap.pk %}"
-                        class="btn btn-edit"
-                    >
-                        Edit
-                    </a>
-
-                </td>
-
-            </tr>
-
-        {% empty %}
-
-            <tr>
-                <td colspan="4">
-                    No received scrap recorded for this date.
-                </td>
-            </tr>
-
-        {% endfor %}
-
-    </tbody>
-
-</table>
-
-
-{% if received_scraps %}
-
-    <div class="total">
-
-        Total Received Scrap:
-        {{ total_kg|default:0 }} kg
-
-        <span class="record-count">
-            ({{ received_scraps|length }}
-            record{{ received_scraps|length|pluralize }})
-        </span>
-
+    <div class="header">
+        <h1>Received Scrap</h1>
+        <a href="{% url 'received_scrap_create' %}" class="btn">+ Add Received Scrap</a>
     </div>
 
-{% endif %}
+    <!-- Date filter -->
+    <form method="get" class="filters">
+        <div class="filter-field">
+            <label for="date">Date</label>
+            <input
+                type="date"
+                name="date"
+                id="date"
+                value="{{ selected_date }}"
+                required
+            >
+        </div>
+        <button type="submit">Filter</button>
+    </form>
+
+    <h2>Received Scrap for {{ selected_date }}</h2>
+
+    <div class="table-card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Time</th>
+                    <th class="num">Received Scrap (KG)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for scrap in received_scraps %}
+                    <tr>
+                        <td data-label="Department">{{ scrap.department.name }}</td>
+                        <td data-label="Time">{{ scrap.time|time:"H:i" }}</td>
+                        <td data-label="Received Scrap (KG)" class="num">{{ scrap.received_scrap_kg }}</td>
+                        <td class="actions">
+                            <a href="{% url 'received_scrap_edit' scrap.pk %}" class="btn btn-edit">Edit</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="empty">No received scrap recorded for this date.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if received_scraps %}
+        <div class="total">
+            Total Received Scrap: {{ total_kg|default:0 }} kg
+            <span class="record-count">
+                ({{ received_scraps|length }} record{{ received_scraps|length|pluralize }})
+            </span>
+        </div>
+    {% endif %}
+
+</div>
 
 </body>
 </html>

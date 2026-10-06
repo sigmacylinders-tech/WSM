@@ -1,192 +1,237 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <!-- This line is the main fix: without it, phones render the page as a tiny desktop page -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>{{ title }}</title>
 
     <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
 
         body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 18px;
+            line-height: 1.5;
+            margin: 0;
+            padding: 24px 16px;
+            background-color: #f4f6f8;
+            color: #222;
         }
 
         .form-container {
-            max-width: 500px;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 28px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            margin: 0 0 24px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 22px;
         }
 
         .form-row {
             display: flex;
-            gap: 15px;
+            gap: 16px;
         }
 
         .form-row .form-group {
             flex: 1;
+            min-width: 0;
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: bold;
+            font-size: 1rem;
         }
 
+        /* Covers the widgets Django renders: inputs, selects, textareas */
         input,
-        select {
+        select,
+        textarea {
             width: 100%;
-            padding: 9px;
-            box-sizing: border-box;
+            min-height: 52px;
+            padding: 12px 14px;
+            font-size: 18px; /* 16px+ stops iPhones from zooming in on tap */
+            font-family: inherit;
+            border: 1px solid #b8c0c8;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #222;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 3px solid rgba(25, 135, 84, 0.35);
+            border-color: #198754;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 28px;
         }
 
         button {
-            padding: 9px 16px;
+            min-height: 52px;
+            padding: 12px 32px;
+            font-size: 18px;
+            font-weight: bold;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             background-color: #198754;
-            color: white;
+            color: #fff;
             cursor: pointer;
         }
 
+        button:hover {
+            background-color: #157347;
+        }
+
         .cancel {
-            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            padding: 12px 24px;
+            font-size: 18px;
             text-decoration: none;
-            color: #555;
+            color: #444;
+            border: 1px solid #b8c0c8;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .cancel:hover {
+            background-color: #f1f3f5;
         }
 
         .error {
-            color: #dc3545;
-            margin-bottom: 15px;
+            color: #b02a37;
+            background-color: #fdecee;
+            border: 1px solid #f5c2c7;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
         }
 
         .field-error {
             color: #dc3545;
-            font-size: 14px;
-            margin-top: 4px;
+            font-size: 16px;
+            margin-top: 6px;
         }
 
-    </style>
+        /* Phones: stack Date/Time and make buttons full width */
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
 
+            .form-container {
+                padding: 20px 16px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            button,
+            .cancel {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="form-container">
 
-    <h1>
-        {{ title }}
-    </h1>
-
+    <h1>{{ title }}</h1>
 
     {% if form.non_field_errors %}
-
         <div class="error">
-
             {% for error in form.non_field_errors %}
                 <div>{{ error }}</div>
             {% endfor %}
-
         </div>
-
     {% endif %}
 
-
     <form method="post">
-
         {% csrf_token %}
 
-
         <!-- Department -->
-
         <div class="form-group">
-
-            <label for="{{ form.department.id_for_label }}">
-                Department
-            </label>
-
+            <label for="{{ form.department.id_for_label }}">Department</label>
             {{ form.department }}
-
             {% for error in form.department.errors %}
-                <div class="field-error">
-                    {{ error }}
-                </div>
+                <div class="field-error">{{ error }}</div>
             {% endfor %}
-
         </div>
-
 
         <!-- Date and Time -->
-
         <div class="form-row">
-
             <div class="form-group">
-
-                <label for="{{ form.date.id_for_label }}">
-                    Date
-                </label>
-
+                <label for="{{ form.date.id_for_label }}">Date</label>
                 {{ form.date }}
-
                 {% for error in form.date.errors %}
-                    <div class="field-error">
-                        {{ error }}
-                    </div>
+                    <div class="field-error">{{ error }}</div>
                 {% endfor %}
-
             </div>
-
 
             <div class="form-group">
-
-                <label for="{{ form.time.id_for_label }}">
-                    Time
-                </label>
-
+                <label for="{{ form.time.id_for_label }}">Time</label>
                 {{ form.time }}
-
                 {% for error in form.time.errors %}
-                    <div class="field-error">
-                        {{ error }}
-                    </div>
+                    <div class="field-error">{{ error }}</div>
                 {% endfor %}
-
             </div>
-
         </div>
-
 
         <!-- Received Scrap -->
-
         <div class="form-group">
-
-            <label for="{{ form.received_scrap_kg.id_for_label }}">
-                Received Scrap (KG)
-            </label>
-
+            <label for="{{ form.received_scrap_kg.id_for_label }}">Received Scrap (KG)</label>
             {{ form.received_scrap_kg }}
-
             {% for error in form.received_scrap_kg.errors %}
-                <div class="field-error">
-                    {{ error }}
-                </div>
+                <div class="field-error">{{ error }}</div>
             {% endfor %}
-
         </div>
 
-
-        <button type="submit">
-            Save
-        </button>
-
-
-        <a
-            href="{% url 'received_scrap_list' %}"
-            class="cancel"
-        >
-            Cancel
-        </a>
+        <div class="form-actions">
+            <button type="submit">Save</button>
+            <a href="{% url 'received_scrap_list' %}" class="cancel">Cancel</a>
+        </div>
 
     </form>
 
