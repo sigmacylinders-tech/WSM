@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Monthly Scrap Report</title>
+    <title>Scrap Report</title>
 
     <style>
 
@@ -47,13 +47,25 @@
             color: #666;
         }
 
+        .period {
+            margin-top: 12px !important;
+            color: #333 !important;
+            font-size: 15px;
+        }
+
+        .period strong {
+            color: #000;
+        }
+
         .filters {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             margin-bottom: 20px;
+        }
 
+        .filter-row {
             display: flex;
             gap: 15px;
             align-items: end;
@@ -77,6 +89,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             min-width: 180px;
+            font-family: inherit;
         }
 
         .btn {
@@ -87,6 +100,43 @@
             color: white;
             text-decoration: none;
             cursor: pointer;
+            font-size: 14px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+
+        .preset {
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .preset:hover {
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+
+        .preset.active {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
         }
 
         .table-container {
@@ -94,7 +144,6 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-
             overflow-x: auto;
         }
 
@@ -156,7 +205,7 @@
                 padding: 15px;
             }
 
-            .filters {
+            .filter-row {
                 flex-direction: column;
                 align-items: stretch;
             }
@@ -184,12 +233,20 @@
     <div class="header">
 
         <h1>
-            Monthly Scrap Report
+            Scrap Report
         </h1>
 
         <p>
             Compare theoretical, actual, and received scrap
-            for the selected month.
+            for the selected period.
+        </p>
+
+        <p class="period">
+            Period:
+            <strong>{{ date_from|date:"d M Y" }}</strong>
+            to
+            <strong>{{ date_to|date:"d M Y" }}</strong>
+            ({{ period_days }} day{{ period_days|pluralize }})
         </p>
 
     </div>
@@ -199,67 +256,113 @@
 
     <form method="get" class="filters">
 
+        <div class="filter-row">
 
-        <div class="filter-group">
+            <div class="filter-group">
 
-            <label for="month">
-                Month
-            </label>
+                <label for="date_from">
+                    From
+                </label>
 
-            <input
-                type="month"
-                name="month"
-                id="month"
-                value="{{ selected_month }}"
-                required
-            >
+                <input
+                    type="date"
+                    name="date_from"
+                    id="date_from"
+                    value="{{ date_from|date:'Y-m-d' }}"
+                    required
+                >
 
-        </div>
+            </div>
 
 
-        <div class="filter-group">
+            <div class="filter-group">
 
-            <label for="department">
-                Department
-            </label>
+                <label for="date_to">
+                    To
+                </label>
 
-            <select
-                name="department"
-                id="department"
-            >
+                <input
+                    type="date"
+                    name="date_to"
+                    id="date_to"
+                    value="{{ date_to|date:'Y-m-d' }}"
+                    min="{{ date_from|date:'Y-m-d' }}"
+                    required
+                >
 
-                <option value="">
-                    All Departments
-                </option>
+            </div>
 
-                {% for department in departments %}
 
-                    <option
-                        value="{{ department.id }}"
+            <div class="filter-group">
 
-                        {% if department.id|stringformat:"s" == selected_department_id %}
-                            selected
-                        {% endif %}
-                    >
+                <label for="department">
+                    Department
+                </label>
 
-                        {{ department.name }}
+                <select
+                    name="department"
+                    id="department"
+                >
 
+                    <option value="">
+                        All Departments
                     </option>
 
-                {% endfor %}
+                    {% for department in departments %}
 
-            </select>
+                        <option
+                            value="{{ department.id }}"
+
+                            {% if department.id|stringformat:"s" == selected_department_id %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ department.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="btn"
+            >
+                Filter
+            </button>
+
+
+            <a
+                href="{{ request.path }}"
+                class="btn btn-secondary"
+            >
+                Reset
+            </a>
 
         </div>
 
 
-        <button
-            type="submit"
-            class="btn"
-        >
-            Filter
-        </button>
+        <!-- Quick ranges -->
 
+        <div class="presets">
+
+            {% for preset in presets %}
+
+                <a
+                    href="?{{ preset.query }}"
+                    class="preset{% if preset.active %} active{% endif %}"
+                >
+                    {{ preset.label }}
+                </a>
+
+            {% endfor %}
+
+        </div>
 
     </form>
 
@@ -380,7 +483,10 @@
                             colspan="6"
                             class="empty"
                         >
-                            No scrap data found for this month.
+                            No scrap data found between
+                            {{ date_from|date:"d M Y" }} and
+                            {{ date_to|date:"d M Y" }}.
+                            Try a wider range or a different department.
                         </td>
 
                     </tr>
@@ -469,6 +575,29 @@
 
 
 </div>
+
+
+<script>
+
+    // Keep "To" from going before "From" while picking dates
+    (function () {
+
+        var from = document.getElementById("date_from");
+        var to = document.getElementById("date_to");
+
+        from.addEventListener("change", function () {
+
+            to.min = from.value;
+
+            if (to.value && to.value < from.value) {
+                to.value = from.value;
+            }
+
+        });
+
+    })();
+
+</script>
 
 </body>
 

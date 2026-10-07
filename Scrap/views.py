@@ -1,6 +1,6 @@
 from calendar import monthrange
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.admin.views.decorators import staff_member_required
@@ -11,6 +11,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.utils.http import urlencode
 
 from .forms import CoilForm, ActualScrapForm, ProductionEntryForm, ReceivedScrapForm
 from .models import ProductionEntry, Department, ActualScrap, Coil, ReceivedScrap
@@ -726,68 +727,146 @@ def received_scrap_edit(request, pk):
         {"form": form, "title": "Edit Received Scrap"},
     )
 
-@staff_member_required
-def monthly_scrap_report(request):
+
+# =========================================================
+# Helpers
+# =========================================================
+
+def _parse_date(value):
+    """Parse YYYY-MM-DD safely. Returns a date or None."""
+
+    if not value:
+        return None
+
+    try:
+        return date.fromisoformat(value.strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _month_bounds(year, month):
+    """First and last day of a given month."""
+
+    return (
+        date(year, month, 1),
+        date(year, month, monthrange(year, month)[1]),
+    )
+
+
+def _resolve_period(request):
+    """
+    Work out the reporting period from the query string.
+
+    Priority:
+        1. ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+           (either side may be missing)
+        2. ?month=YYYY-MM  (kept for old links / bookmarks)
+        3. Current month
+    """
+
+    today = timezone.localdate()
+
+    date_from = _parse_date(request.GET.get("date_from"))
+    date_to = _parse_date(request.GET.get("date_to"))
 
     # -------------------------
-    # Month filter
+    # 1. Explicit date range
+    # -------------------------
+
+    if date_from or date_to:
+
+        if date_from and not date_to:
+            # From a date until today (or the same day if in the future)
+            date_to = today if date_from <= today else date_from
+
+        elif date_to and not date_from:
+            # From the start of that month until the given date
+            date_from = date_to.replace(day=1)
+
+        # Swap if the user entered them backwards
+        if date_from > date_to:
+            date_from, date_to = date_to, date_from
+
+        return date_from, date_to
+
+    # -------------------------
+    # 2. Legacy month filter
     # -------------------------
 
     selected_month = request.GET.get("month")
 
-    if not selected_month:
-        today = timezone.localdate()
+    if selected_month:
 
-        selected_month = (
-            f"{today.year:04d}-{today.month:02d}"
-        )
+        try:
+            year, month = map(int, selected_month.split("-"))
+            return _month_bounds(year, month)
 
-    try:
-        selected_year, selected_month_number = map(
-            int,
-            selected_month.split("-")
-        )
+        except (ValueError, TypeError):
+            pass
 
-        month_start = date(
-            selected_year,
-            selected_month_number,
-            1
-        )
+    # -------------------------
+    # 3. Default: current month
+    # -------------------------
 
-        month_end = date(
-            selected_year,
-            selected_month_number,
-            monthrange(
-                selected_year,
-                selected_month_number
-            )[1]
-        )
+    return _month_bounds(today.year, today.month)
 
-    except (ValueError, TypeError):
 
-        today = timezone.localdate()
+def _build_presets(date_from, date_to, selected_department_id):
+    """Quick-select ranges shown above the table."""
 
-        selected_year = today.year
-        selected_month_number = today.month
+    today = timezone.localdate()
 
-        selected_month = (
-            f"{selected_year:04d}-{selected_month_number:02d}"
-        )
+    this_month_start, this_month_end = _month_bounds(
+        today.year,
+        today.month,
+    )
 
-        month_start = date(
-            selected_year,
-            selected_month_number,
-            1
-        )
+    last_month_end = this_month_start - timedelta(days=1)
 
-        month_end = date(
-            selected_year,
-            selected_month_number,
-            monthrange(
-                selected_year,
-                selected_month_number
-            )[1]
-        )
+    last_month_start = last_month_end.replace(day=1)
+
+    ranges = [
+        ("Today", today, today),
+        ("Last 7 days", today - timedelta(days=6), today),
+        ("Last 30 days", today - timedelta(days=29), today),
+        ("This month", this_month_start, this_month_end),
+        ("Last month", last_month_start, last_month_end),
+        ("Year to date", date(today.year, 1, 1), today),
+    ]
+
+    presets = []
+
+    for label, start, end in ranges:
+
+        params = {
+            "date_from": start.isoformat(),
+            "date_to": end.isoformat(),
+        }
+
+        if selected_department_id:
+            params["department"] = selected_department_id
+
+        presets.append({
+            "label": label,
+            "query": urlencode(params),
+            "active": (start == date_from and end == date_to),
+        })
+
+    return presets
+
+
+# =========================================================
+# View
+# =========================================================
+@staff_member_required
+def monthly_scrap_report(request):
+    # -------------------------
+    # Period filter
+    # -------------------------
+
+    date_from, date_to = _resolve_period(request)
+
+    period_days = (date_to - date_from).days + 1
 
     # -------------------------
     # Department filter
@@ -795,8 +874,12 @@ def monthly_scrap_report(request):
 
     selected_department_id = request.GET.get(
         "department",
-        ""
-    )
+        "",
+    ).strip()
+
+    # Ignore anything that isn't a valid id
+    if not selected_department_id.isdigit():
+        selected_department_id = ""
 
     # -------------------------
     # Production entries
@@ -810,13 +893,12 @@ def monthly_scrap_report(request):
             "size",
         )
         .filter(
-            production_date__gte=month_start,
-            production_date__lte=month_end,
+            production_date__gte=date_from,
+            production_date__lte=date_to,
         )
     )
 
     if selected_department_id:
-
         production_entries = production_entries.filter(
             department_id=selected_department_id
         )
@@ -836,36 +918,29 @@ def monthly_scrap_report(request):
 
         theoretical_scrap = None
 
-        # -------------------------
         # KG-based departments
-        # -------------------------
-
         if (
-            entry.department.calculation_type == Department.KG
-            and entry.steel_used_kg is not None
+                entry.department.calculation_type == Department.KG
+                and entry.steel_used_kg is not None
         ):
 
             theoretical_scrap = (
-                entry.steel_used_kg
-                * standard.scrap_percentage
-            ) / Decimal("100")
+                                        entry.steel_used_kg
+                                        * standard.scrap_percentage
+                                ) / Decimal("100")
 
-        # -------------------------
         # Unit-based departments
-        # -------------------------
-
         elif (
-            entry.department.calculation_type == Department.UNITS
-            and entry.units_produced is not None
+                entry.department.calculation_type == Department.UNITS
+                and entry.units_produced is not None
         ):
 
             theoretical_scrap = (
-                Decimal(entry.units_produced)
-                * standard.scrap_percentage
-            ) / Decimal("100")
+                                        Decimal(entry.units_produced)
+                                        * standard.scrap_percentage
+                                ) / Decimal("100")
 
         if theoretical_scrap is not None:
-
             theoretical_totals[
                 entry.department_id
             ] += theoretical_scrap
@@ -878,13 +953,12 @@ def monthly_scrap_report(request):
         ActualScrap.objects
         .select_related("department")
         .filter(
-            entered_at__gte=month_start,
-            entered_at__lte=month_end,
+            entered_at__gte=date_from,
+            entered_at__lte=date_to,
         )
     )
 
     if selected_department_id:
-
         actual_scrap_entries = actual_scrap_entries.filter(
             department_id=selected_department_id
         )
@@ -894,7 +968,6 @@ def monthly_scrap_report(request):
     for actual in actual_scrap_entries:
 
         if actual.actual_scrap_kg is not None:
-
             actual_totals[
                 actual.department_id
             ] += actual.actual_scrap_kg
@@ -907,13 +980,12 @@ def monthly_scrap_report(request):
         ReceivedScrap.objects
         .select_related("department")
         .filter(
-            date__gte=month_start,
-            date__lte=month_end,
+            date__gte=date_from,
+            date__lte=date_to,
         )
     )
 
     if selected_department_id:
-
         received_scrap_entries = received_scrap_entries.filter(
             department_id=selected_department_id
         )
@@ -922,20 +994,19 @@ def monthly_scrap_report(request):
 
     for received in received_scrap_entries:
 
-        received_totals[
-            received.department_id
-        ] += received.received_scrap_kg
+        if received.received_scrap_kg is not None:
+            received_totals[
+                received.department_id
+            ] += received.received_scrap_kg
 
     # -------------------------
-    # Departments
+    # Departments in report
     # -------------------------
 
     department_ids = (
-        set(theoretical_totals.keys())
-        |
-        set(actual_totals.keys())
-        |
-        set(received_totals.keys())
+            set(theoretical_totals.keys())
+            | set(actual_totals.keys())
+            | set(received_totals.keys())
     )
 
     departments = (
@@ -955,26 +1026,9 @@ def monthly_scrap_report(request):
     total_received = Decimal("0")
 
     for department in departments:
-
-        theoretical = theoretical_totals[
-            department.id
-        ]
-
-        actual = actual_totals[
-            department.id
-        ]
-
-        received = received_totals[
-            department.id
-        ]
-
-        actual_vs_theoretical = (
-            actual - theoretical
-        )
-
-        actual_vs_received = (
-            actual - received
-        )
+        theoretical = theoretical_totals[department.id]
+        actual = actual_totals[department.id]
+        received = received_totals[department.id]
 
         department_reports.append({
             "department": department,
@@ -983,11 +1037,8 @@ def monthly_scrap_report(request):
             "actual": actual,
             "received": received,
 
-            "actual_vs_theoretical":
-                actual_vs_theoretical,
-
-            "actual_vs_received":
-                actual_vs_received,
+            "actual_vs_theoretical": actual - theoretical,
+            "actual_vs_received": actual - received,
         })
 
         total_theoretical += theoretical
@@ -999,11 +1050,11 @@ def monthly_scrap_report(request):
     # -------------------------
 
     total_actual_vs_theoretical = (
-        total_actual - total_theoretical
+            total_actual - total_theoretical
     )
 
     total_actual_vs_received = (
-        total_actual - total_received
+            total_actual - total_received
     )
 
     # -------------------------
@@ -1026,14 +1077,9 @@ def monthly_scrap_report(request):
         {
             "department_reports": department_reports,
 
-            "total_theoretical":
-                total_theoretical,
-
-            "total_actual":
-                total_actual,
-
-            "total_received":
-                total_received,
+            "total_theoretical": total_theoretical,
+            "total_actual": total_actual,
+            "total_received": total_received,
 
             "total_actual_vs_theoretical":
                 total_actual_vs_theoretical,
@@ -1043,10 +1089,16 @@ def monthly_scrap_report(request):
 
             "departments": all_departments,
 
-            "selected_department_id":
-                selected_department_id,
+            "selected_department_id": selected_department_id,
 
-            "selected_month":
-                selected_month,
+            "date_from": date_from,
+            "date_to": date_to,
+            "period_days": period_days,
+
+            "presets": _build_presets(
+                date_from,
+                date_to,
+                selected_department_id,
+            ),
         },
     )

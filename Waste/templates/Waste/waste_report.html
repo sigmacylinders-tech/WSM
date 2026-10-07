@@ -60,6 +60,15 @@
             font-size: 14px;
         }
 
+        .page-header .period {
+            margin-top: 10px;
+            color: #374151;
+        }
+
+        .page-header .period strong {
+            color: #111827;
+        }
+
         /* =========================
            Filter Card
         ========================= */
@@ -94,6 +103,10 @@
             min-width: 220px;
         }
 
+        .filter-group.date-group {
+            min-width: 170px;
+        }
+
         .filter-group label {
             font-size: 13px;
             font-weight: 600;
@@ -109,6 +122,7 @@
             background: #ffffff;
             color: #111827;
             font-size: 14px;
+            font-family: inherit;
             outline: none;
             transition:
                 border-color 0.15s ease,
@@ -142,6 +156,64 @@
 
         .filter-button:active {
             transform: translateY(1px);
+        }
+
+        .reset-button {
+            height: 42px;
+            padding: 0 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s ease;
+        }
+
+        .reset-button:hover {
+            background: #f3f4f6;
+        }
+
+        /* =========================
+           Quick Ranges
+        ========================= */
+
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .preset {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition:
+                border-color 0.15s ease,
+                color 0.15s ease;
+        }
+
+        .preset:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        .preset.active {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: #ffffff;
         }
 
         /* =========================
@@ -486,12 +558,14 @@
                 gap: 14px;
             }
 
-            .filter-group {
+            .filter-group,
+            .filter-group.date-group {
                 width: 100%;
                 min-width: 0;
             }
 
-            .filter-button {
+            .filter-button,
+            .reset-button {
                 width: 100%;
                 margin-top: 2px;
             }
@@ -535,6 +609,14 @@
             Compare received waste with recorded actual waste.
         </p>
 
+        <p class="period">
+            Period:
+            <strong>{{ date_from|date:"d M Y" }}</strong>
+            to
+            <strong>{{ date_to|date:"d M Y" }}</strong>
+            ({{ period_days }} day{{ period_days|pluralize }})
+        </p>
+
     </div>
 
 
@@ -555,19 +637,40 @@
         >
 
 
-            <!-- Month -->
+            <!-- From -->
 
-            <div class="filter-group">
+            <div class="filter-group date-group">
 
-                <label for="month">
-                    Month
+                <label for="date_from">
+                    From
                 </label>
 
                 <input
-                    type="month"
-                    name="month"
-                    id="month"
-                    value="{{ selected_month }}"
+                    type="date"
+                    name="date_from"
+                    id="date_from"
+                    value="{{ date_from|date:'Y-m-d' }}"
+                    required
+                >
+
+            </div>
+
+
+            <!-- To -->
+
+            <div class="filter-group date-group">
+
+                <label for="date_to">
+                    To
+                </label>
+
+                <input
+                    type="date"
+                    name="date_to"
+                    id="date_to"
+                    value="{{ date_to|date:'Y-m-d' }}"
+                    min="{{ date_from|date:'Y-m-d' }}"
+                    required
                 >
 
             </div>
@@ -649,7 +752,7 @@
             </div>
 
 
-            <!-- Filter Button -->
+            <!-- Buttons -->
 
             <button
                 type="submit"
@@ -658,8 +761,33 @@
                 Apply Filters
             </button>
 
+            <a
+                href="{{ request.path }}"
+                class="reset-button"
+            >
+                Reset
+            </a>
+
 
         </form>
+
+
+        <!-- Quick ranges -->
+
+        <div class="presets">
+
+            {% for preset in presets %}
+
+                <a
+                    href="?{{ preset.query }}"
+                    class="preset{% if preset.active %} active{% endif %}"
+                >
+                    {{ preset.label }}
+                </a>
+
+            {% endfor %}
+
+        </div>
 
     </div>
 
@@ -688,7 +816,7 @@
 
             <p class="report-note">
                 Weight is recorded per basket, so this table is not filtered by project.
-                It shows all baskets for the selected month and department.
+                It shows all baskets for the selected dates and department.
             </p>
 
         {% endif %}
@@ -841,7 +969,7 @@
                                 </span>
 
                                 <span class="empty-description">
-                                    Try changing the month or department filter.
+                                    Try a wider date range or a different department.
                                 </span>
 
                             </td>
@@ -1076,7 +1204,7 @@
                                 </span>
 
                                 <span class="empty-description">
-                                    Try changing the month, department or project filter.
+                                    Try a wider date range or a different department or project.
                                 </span>
 
                             </td>
@@ -1323,6 +1451,29 @@
 
 
 </div>
+
+
+<script>
+
+    // Keep "To" from going before "From" while picking dates
+    (function () {
+
+        var from = document.getElementById("date_from");
+        var to = document.getElementById("date_to");
+
+        from.addEventListener("change", function () {
+
+            to.min = from.value;
+
+            if (to.value && to.value < from.value) {
+                to.value = from.value;
+            }
+
+        });
+
+    })();
+
+</script>
 
 </body>
 

@@ -1,13 +1,14 @@
 import re
 from calendar import monthrange
 from collections import defaultdict
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum, F
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.utils.http import urlencode
 
 from Scrap.models import SKU
 from .models import ActualWaste, Department, ReceivedWaste, ReceivedWasteUnit, WasteUnits, ActualWasteUnit, Project
@@ -217,13 +218,92 @@ SERIAL_CONTEXT_FIELDS = {
 }
 
 
-def parse_month(value):
-    """'YYYY-MM' -> first day of that month. Falls back to the current month."""
+def parse_date(value):
+    """'YYYY-MM-DD' -> date. Returns None for empty or invalid input."""
     try:
-        year, month = map(int, value.split("-"))
-        return date(year, month, 1)
-    except (AttributeError, TypeError, ValueError):
-        return timezone.localdate().replace(day=1)
+        return date.fromisoformat((value or "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def month_bounds(year, month):
+    """First and last day of a month."""
+    return (
+        date(year, month, 1),
+        date(year, month, monthrange(year, month)[1]),
+    )
+
+
+def resolve_period(request):
+    """
+    Works out the reporting period from the query string.
+
+    Priority:
+        1. ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD (either side may be missing)
+        2. ?month=YYYY-MM (kept so old links and bookmarks still work)
+        3. Current month
+    """
+    today = timezone.localdate()
+
+    date_from = parse_date(request.GET.get("date_from"))
+    date_to = parse_date(request.GET.get("date_to"))
+
+    if date_from or date_to:
+        if date_from and not date_to:
+            date_to = today if date_from <= today else date_from
+        elif date_to and not date_from:
+            date_from = date_to.replace(day=1)
+
+        if date_from > date_to:
+            date_from, date_to = date_to, date_from
+
+        return date_from, date_to
+
+    month = request.GET.get("month")
+
+    if month:
+        try:
+            year, month_number = map(int, month.split("-"))
+            return month_bounds(year, month_number)
+        except (AttributeError, TypeError, ValueError):
+            pass
+
+    return month_bounds(today.year, today.month)
+
+
+def build_presets(date_from, date_to, extra_params):
+    """Quick-select date ranges. extra_params keeps the other filters."""
+    today = timezone.localdate()
+
+    this_month_start, this_month_end = month_bounds(today.year, today.month)
+    last_month_end = this_month_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+
+    ranges = [
+        ("Today", today, today),
+        ("Last 7 days", today - timedelta(days=6), today),
+        ("Last 30 days", today - timedelta(days=29), today),
+        ("This month", this_month_start, this_month_end),
+        ("Last month", last_month_start, last_month_end),
+        ("Year to date", date(today.year, 1, 1), today),
+    ]
+
+    presets = []
+
+    for label, start, end in ranges:
+        params = {
+            "date_from": start.isoformat(),
+            "date_to": end.isoformat(),
+            **{key: value for key, value in extra_params.items() if value},
+        }
+
+        presets.append({
+            "label": label,
+            "query": urlencode(params),
+            "active": start == date_from and end == date_to,
+        })
+
+    return presets
 
 
 def parse_id(value):
@@ -340,13 +420,14 @@ def reconcile_serials(received, recorded):
 
 def waste_report(request):
 
-    start_date = parse_month(request.GET.get("month"))
-    end_date = start_date.replace(
-        day=monthrange(start_date.year, start_date.month)[1]
-    )
+    start_date, end_date = resolve_period(request)
+    period_days = (end_date - start_date).days + 1
 
     department_id = parse_id(request.GET.get("department"))
     project_id = parse_id(request.GET.get("project"))
+
+    selected_department = str(department_id) if department_id else ""
+    selected_project = str(project_id) if project_id else ""
 
 
     # Filters shared by all querysets
@@ -439,8 +520,20 @@ def waste_report(request):
             "departments": Department.objects.order_by("name"),
             "projects": Project.objects.order_by("name"),
 
-            "selected_month": start_date.strftime("%Y-%m"),
-            "selected_department": str(department_id) if department_id else "",
-            "selected_project": str(project_id) if project_id else "",
+            "date_from": start_date,
+            "date_to": end_date,
+            "period_days": period_days,
+
+            "presets": build_presets(
+                start_date,
+                end_date,
+                {
+                    "department": selected_department,
+                    "project": selected_project,
+                },
+            ),
+
+            "selected_department": selected_department,
+            "selected_project": selected_project,
         },
     )
