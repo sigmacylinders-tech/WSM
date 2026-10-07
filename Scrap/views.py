@@ -24,15 +24,59 @@ def home(request):
 def scrap_report(request):
 
     # -------------------------
-    # Filters
+    # Department filter
     # -------------------------
 
-    selected_department_id = request.GET.get("department", "")
+    selected_department_id = request.GET.get("department", "").strip()
 
-    selected_date = request.GET.get(
-        "date",
-        timezone.localdate().isoformat()
-    )
+    # Ignore anything that isn't a valid id
+    if not selected_department_id.isdigit():
+        selected_department_id = ""
+
+    # -------------------------
+    # Date range filter
+    # -------------------------
+
+    today = timezone.localdate()
+
+    raw_from = request.GET.get("date_from", "").strip()
+    raw_to = request.GET.get("date_to", "").strip()
+
+    # Old single-day links (?date=YYYY-MM-DD) still work
+    legacy_date = request.GET.get("date", "").strip()
+
+    if legacy_date and not raw_from and not raw_to:
+        raw_from = legacy_date
+        raw_to = legacy_date
+
+    try:
+        date_from = date.fromisoformat(raw_from) if raw_from else None
+    except ValueError:
+        date_from = None
+
+    try:
+        date_to = date.fromisoformat(raw_to) if raw_to else None
+    except ValueError:
+        date_to = None
+
+    if date_from is None and date_to is None:
+        # Default: today only (same as before)
+        date_from = today
+        date_to = today
+
+    elif date_to is None:
+        # From a date until today (or the same day if in the future)
+        date_to = today if date_from <= today else date_from
+
+    elif date_from is None:
+        # Only "to" given: show that single day
+        date_from = date_to
+
+    # Swap if entered backwards
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    period_days = (date_to - date_from).days + 1
 
     # -------------------------
     # Production entries
@@ -40,13 +84,14 @@ def scrap_report(request):
 
     entries = (
         ProductionEntry.objects
-        .select_related("department", "coil")
+        .select_related("department", "coil", "size")
         .filter(
-            production_date=selected_date
+            production_date__range=(date_from, date_to)
         )
         .order_by(
             "department__name",
-            "production_date"
+            "production_date",
+            "id",
         )
     )
 
@@ -63,7 +108,7 @@ def scrap_report(request):
         ActualScrap.objects
         .select_related("department", "coil")
         .filter(
-            entered_at=selected_date
+            entered_at__range=(date_from, date_to)
         )
     )
 
@@ -99,6 +144,9 @@ def scrap_report(request):
     other_department_totals = defaultdict(Decimal)
 
     for actual in actual_scrap_entries:
+
+        if actual.actual_scrap_kg is None:
+            continue
 
         # -------------------------
         # Blanking
@@ -157,7 +205,7 @@ def scrap_report(request):
                 and entry.units_produced is not None
             ):
                 theoretical_scrap = (
-                    entry.units_produced
+                    Decimal(entry.units_produced)
                     * standard.scrap_percentage
                 ) / Decimal("100")
 
@@ -374,7 +422,10 @@ def scrap_report(request):
             "department_reports": department_reports,
             "departments": departments,
             "selected_department_id": selected_department_id,
-            "selected_date": selected_date,
+
+            "date_from": date_from,
+            "date_to": date_to,
+            "period_days": period_days,
         },
     )
 

@@ -64,10 +64,15 @@
         border: 1px solid var(--color-border);
         border-radius: 8px;
         font-size: 14px;
+        font-family: inherit;
         color: var(--color-text);
         background: var(--color-surface);
         min-width: 200px;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .filters input[type="date"] {
+        min-width: 170px;
     }
 
     .filters select:hover,
@@ -101,6 +106,35 @@
 
     .filters button:active {
         transform: translateY(1px);
+    }
+
+    .filters .reset-link {
+        padding: 9px 18px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: var(--color-surface);
+        color: var(--color-text);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        text-align: center;
+        transition: background 0.15s ease;
+    }
+
+    .filters .reset-link:hover {
+        background: var(--color-surface-alt);
+    }
+
+    .filters .period {
+        margin: 14px 0 0;
+        padding-top: 12px;
+        border-top: 1px solid var(--color-border);
+        font-size: 13px;
+        color: var(--color-text-muted);
+    }
+
+    .filters .period strong {
+        color: var(--color-text);
     }
 
     /* ---------- Table ---------- */
@@ -248,15 +282,37 @@
         }
 
         .filters select,
-        .filters input {
+        .filters input,
+        .filters input[type="date"] {
             min-width: 0;
             width: 100%;
         }
 
-        .filters button {
+        .filters button,
+        .filters .reset-link {
             width: 100%;
         }
     }
+    .back-home {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 8px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.back-home:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
 </style>
 
 <div class="scrap-report-wrapper">
@@ -294,17 +350,35 @@
     </div>
 
 
-    <!-- Date -->
+    <!-- From -->
     <div class="field-group">
-        <label for="date">
-            Date
+        <label for="date_from">
+            From
         </label>
 
         <input
             type="date"
-            name="date"
-            id="date"
-            value="{{ selected_date }}"
+            name="date_from"
+            id="date_from"
+            value="{{ date_from|date:'Y-m-d' }}"
+            required
+        >
+    </div>
+
+
+    <!-- To -->
+    <div class="field-group">
+        <label for="date_to">
+            To
+        </label>
+
+        <input
+            type="date"
+            name="date_to"
+            id="date_to"
+            value="{{ date_to|date:'Y-m-d' }}"
+            min="{{ date_from|date:'Y-m-d' }}"
+            required
         >
     </div>
 
@@ -313,7 +387,24 @@
         Filter
     </button>
 
+    <a href="{{ request.path }}" class="reset-link">
+        Reset
+    </a>
+
 </form>
+
+
+<p class="period">
+    Showing
+    {% if date_from == date_to %}
+        <strong>{{ date_from|date:"d M Y" }}</strong>
+    {% else %}
+        <strong>{{ date_from|date:"d M Y" }}</strong>
+        to
+        <strong>{{ date_to|date:"d M Y" }}</strong>
+        ({{ period_days }} days)
+    {% endif %}
+</p>
 
 
 </div>
@@ -621,7 +712,9 @@
         <tr>
 
             <td colspan="11">
-                No production entries found for the selected filters.
+                No production entries found between
+                {{ date_from|date:"d M Y" }} and {{ date_to|date:"d M Y" }}.
+                Try a wider date range or a different department.
             </td>
 
         </tr>
@@ -633,5 +726,25 @@
 
 </table>
 </div>
-
 </div>
+<br>
+<a href="{% url 'home' %}" class="back-home">
+    ← Back to home
+</a>
+
+
+<script>
+    // Keep "To" from going before "From" while picking dates
+    (function () {
+        var from = document.getElementById("date_from");
+        var to = document.getElementById("date_to");
+
+        from.addEventListener("change", function () {
+            to.min = from.value;
+
+            if (to.value && to.value < from.value) {
+                to.value = from.value;
+            }
+        });
+    })();
+</script>
