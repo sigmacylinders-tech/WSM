@@ -81,13 +81,15 @@ class BaseActualWasteUnitFormSet(BaseInlineFormSet):
 
             sku = form.cleaned_data.get("sku")
             unit = form.cleaned_data.get("units")
+            project = form.cleaned_data.get("project")
 
             if sku and unit:
-                key = (sku, unit)
+                key = (sku, unit, project)
 
                 if key in seen:
+                    project_label = f" and project '{project}'" if project else " with no project"
                     raise forms.ValidationError(
-                        f"'{unit}' for SKU '{sku}' was entered more than once for this basket."
+                        f"'{unit}' for SKU '{sku}'{project_label} was entered more than once for this basket."
                     )
                 seen.add(key)
 
