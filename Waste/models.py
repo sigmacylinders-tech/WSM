@@ -93,7 +93,7 @@ class ReceivedWasteUnit(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["waste", "sku", "units"],
+                fields=["waste", "sku", "units", "project"],
                 name="unique_received_waste_unit",
             ),
         ]
