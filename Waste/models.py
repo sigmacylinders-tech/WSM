@@ -48,6 +48,11 @@ class ActualWasteUnit(models.Model):
         blank=True,
         help_text="Fill in only if this is a complete cylinder.",
     )
+    waste_reason = models.TextField(
+        "Waste reason",
+        blank=True,
+        help_text="Describe why these units were wasted.",
+    )
 
     class Meta:
         constraints = [

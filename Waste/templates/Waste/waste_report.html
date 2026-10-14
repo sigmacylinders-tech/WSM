@@ -385,6 +385,14 @@
             color: #374151;
         }
 
+        /* Waste reasons can be long, so this cell wraps */
+        .report-table td.reason-cell {
+            white-space: normal;
+            min-width: 240px;
+            max-width: 420px;
+            line-height: 1.45;
+        }
+
         /* =========================
            Variance
         ========================= */
@@ -1225,6 +1233,177 @@
 
                                 <span class="empty-description">
                                     Try a wider date range or a different department or project.
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+
+                    {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         Waste Reasons
+    ========================== -->
+
+    <div class="report-card">
+
+
+        <div class="report-header">
+
+            <h2>
+                Waste Reasons
+            </h2>
+
+            <span>
+                Recorded lines with a reason ({{ reason_lines|length }})
+            </span>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table class="report-table wide">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Department
+                        </th>
+
+                        <th>
+                            SKU
+                        </th>
+
+                        <th>
+                            Waste Unit
+                        </th>
+
+                        <th>
+                            Qty
+                        </th>
+
+                        <th>
+                            Project
+                        </th>
+
+                        <th>
+                            Reason
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    {% for line in reason_lines %}
+
+
+                        <tr>
+
+
+                            <td>
+                                <span class="date-value">
+                                    {{ line.waste.date|date:"d M Y" }}
+                                </span>
+                            </td>
+
+
+                            <td>
+                                <span class="department-name">
+                                    {{ line.waste.department }}
+                                </span>
+                            </td>
+
+
+                            <td>
+
+                                {% if line.sku %}
+                                    <span class="sku">
+                                        {{ line.sku }}
+                                    </span>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+                                <span class="unit-badge">
+                                    {{ line.units }}
+                                </span>
+                            </td>
+
+
+                            <td class="number">
+                                {{ line.nb_of_units }}
+                            </td>
+
+
+                            <td>
+
+                                {% if line.project %}
+                                    <span class="project-badge">
+                                        {{ line.project }}
+                                    </span>
+                                {% else %}
+                                    <span class="muted">—</span>
+                                {% endif %}
+
+                            </td>
+
+
+                            <td class="reason-cell">
+                                {{ line.waste_reason|linebreaksbr }}
+                            </td>
+
+
+                        </tr>
+
+
+                    {% empty %}
+
+
+                        <tr>
+
+                            <td
+                                colspan="7"
+                                class="empty-state"
+                            >
+
+                                <div class="empty-icon">
+                                    ∅
+                                </div>
+
+                                <span class="empty-title">
+                                    No waste reasons recorded
+                                </span>
+
+                                <span class="empty-description">
+                                    No recorded lines have a reason for the selected filters.
                                 </span>
 
                             </td>

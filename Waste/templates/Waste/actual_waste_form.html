@@ -206,6 +206,7 @@
         /*
             Row 1: SKU | Unit | Qty | Remove
             Row 2: Project | Serial number (spans the rest)
+            Row 3: Waste reason (full width)
         */
         .unit-line {
             display: grid;
@@ -230,6 +231,11 @@
 
         .unit-line .field-serial {
             grid-column: 2 / -1;
+        }
+
+
+        .unit-line .field-reason {
+            grid-column: 1 / -1;
         }
 
 
@@ -466,7 +472,8 @@
 
 
             .unit-line .field-project,
-            .unit-line .field-serial {
+            .unit-line .field-serial,
+            .unit-line .field-reason {
                 grid-column: 1 / -1;
             }
 
@@ -508,7 +515,7 @@
 
         <p>
             Enter the basket details, then list every SKU, unit type, and quantity inside it.
-            Add the project and serial numbers where relevant.
+            Add the project, serial numbers, and waste reason where relevant.
         </p>
 
     </div>
@@ -606,6 +613,14 @@
                             {{ line_form.serial_number.errors }}
                         </div>
 
+                        <!-- Row 3 -->
+
+                        <div class="field-reason">
+                            {{ line_form.waste_reason.label_tag }}
+                            {{ line_form.waste_reason }}
+                            {{ line_form.waste_reason.errors }}
+                        </div>
+
                     </div>
                 {% endfor %}
             </div>
@@ -689,6 +704,13 @@
         <div class="field-serial">
             {{ formset.empty_form.serial_number.label_tag }}
             {{ formset.empty_form.serial_number }}
+        </div>
+
+        <!-- Row 3 -->
+
+        <div class="field-reason">
+            {{ formset.empty_form.waste_reason.label_tag }}
+            {{ formset.empty_form.waste_reason }}
         </div>
 
     </div>

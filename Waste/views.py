@@ -506,7 +506,16 @@ def waste_report(request):
         collect_serials(received_lines),
         collect_serials(recorded_lines),
     )
+    # =========================
+    # Waste reasons (recorded side only)
+    # =========================
 
+    reason_lines = (
+        recorded_lines
+        .exclude(waste_reason="")
+        .select_related("waste__department", "sku", "units", "project")
+        .order_by("waste__date", "waste__department__name")
+    )
 
     return render(
         request,
@@ -516,7 +525,7 @@ def waste_report(request):
             "units_report": units_report,
             "serial_issues": serial_issues,
             "serial_summary": serial_summary,
-
+            "reason_lines": reason_lines,
             "departments": Department.objects.order_by("name"),
             "projects": Project.objects.order_by("name"),
 

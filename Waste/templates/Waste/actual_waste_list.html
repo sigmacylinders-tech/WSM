@@ -298,7 +298,7 @@
 
             border-collapse: collapse;
 
-            min-width: 1100px;
+            min-width: 1250px;
         }
 
 
@@ -378,6 +378,30 @@
         .sku {
             color: #2563eb;
             font-weight: 600;
+        }
+
+
+        .waste-table td.reason-cell {
+            white-space: normal;
+            min-width: 180px;
+            max-width: 260px;
+        }
+
+
+        .waste-reason {
+            display: block;
+
+            color: #4b5563;
+
+            font-size: 13px;
+            line-height: 1.45;
+
+            word-break: break-word;
+        }
+
+
+        .waste-reason[title] {
+            cursor: help;
         }
 
 
@@ -759,6 +783,10 @@
                         </th>
 
                         <th>
+                            Reason
+                        </th>
+
+                        <th>
                             Waste (kg)
                         </th>
 
@@ -842,6 +870,20 @@
                                     </td>
 
 
+                                    <td class="reason-cell">
+                                        {% if line.waste_reason %}
+                                            <span
+                                                class="waste-reason"
+                                                {% if line.waste_reason|length > 80 %}title="{{ line.waste_reason }}"{% endif %}
+                                            >
+                                                {{ line.waste_reason|truncatechars:80 }}
+                                            </span>
+                                        {% else %}
+                                            <span class="muted">—</span>
+                                        {% endif %}
+                                    </td>
+
+
                                     {% if forloop.first %}
 
                                         <td
@@ -883,7 +925,7 @@
                                         </span>
                                     </td>
 
-                                    <td colspan="5">
+                                    <td colspan="6">
                                         <span class="no-lines">
                                             No basket contents recorded
                                         </span>
@@ -915,7 +957,7 @@
                         <tr>
 
                             <td
-                                colspan="9"
+                                colspan="10"
                                 class="empty-state"
                             >
 

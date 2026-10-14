@@ -21,6 +21,17 @@ UNIT_LINE_WIDGETS = {
         }
     ),
 }
+ACTUAL_UNIT_LINE_FIELDS = UNIT_LINE_FIELDS + ["waste_reason"]
+
+ACTUAL_UNIT_LINE_WIDGETS = {
+    **UNIT_LINE_WIDGETS,
+    "waste_reason": forms.Textarea(
+        attrs={
+            "rows": 2,
+            "placeholder": "Why were these units wasted?",
+        }
+    ),
+}
 
 
 def available_projects(instance):
@@ -47,8 +58,8 @@ class ActualWasteForm(forms.ModelForm):
 class ActualWasteUnitForm(forms.ModelForm):
     class Meta:
         model = ActualWasteUnit
-        fields = UNIT_LINE_FIELDS
-        widgets = UNIT_LINE_WIDGETS
+        fields = ACTUAL_UNIT_LINE_FIELDS
+        widgets = ACTUAL_UNIT_LINE_WIDGETS
 
     def __init__(self, *args, department=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,7 +110,7 @@ ActualWasteUnitFormSet = inlineformset_factory(
     ActualWasteUnit,
     form=ActualWasteUnitForm,
     formset=BaseActualWasteUnitFormSet,
-    fields=UNIT_LINE_FIELDS,
+    fields=ACTUAL_UNIT_LINE_FIELDS,
     extra=1,
     can_delete=True,
     min_num=1,
